@@ -1,0 +1,26 @@
+[Unit]
+Description=Mentor Select
+After=network.target
+
+[Service]
+Type=simple
+User=mentor-select
+Group=mentor-select
+WorkingDirectory=/opt/mentor-select
+Environment=SESSION_COOKIE_SECURE=1
+ExecStart=/opt/mentor-select/venv/bin/python -m waitress --listen=127.0.0.1:8000 --threads=8 --trusted-proxy=127.0.0.1 --trusted-proxy-headers="x-forwarded-for x-forwarded-proto" app:app
+Restart=always
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/opt/mentor-select/data
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

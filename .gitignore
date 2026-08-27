@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Runtime data and secrets
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite*
+
+# Generated documents and local artifacts
+*.docx
+*.xlsx
+*.xls
+output/
+outputs/
+resume_render/
+resume_onepage_render/
+docgen/node_modules/
+
+# Browser/test artifacts
+.playwright-cli/
+
+# Local editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

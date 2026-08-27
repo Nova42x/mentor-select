@@ -1,0 +1,12 @@
+[Unit]
+Description=Backup Mentor Select SQLite database
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/mentor-select
+Environment=MENTOR_BACKUP_DIR=/var/backups/mentor-select
+Environment=MENTOR_BACKUP_RETENTION_DAYS=30
+ExecStart=/opt/mentor-select/venv/bin/python /opt/mentor-select/backup_db.py
+UMask=0077

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 - 导师双选</title>
+<link rel="icon" type="image/png" href="/static/app-icon.png">
+<link rel="apple-touch-icon" href="/static/app-icon.png">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="lc-brand">
+      <img class="brand-logo" src="/static/app-icon.png" alt="安农导师双选">
+      <div>
+        <div class="lc-title">导师双选</div>
+        <div class="lc-sub">{{ info.sys_title }}</div>
+      </div>
+    </div>
+    <span class="lc-pill"><span class="dot"></span>{{ '实时互选进行中' if info.open else '当前暂停新申请' }}</span>
+    {% if error %}
+    <div class="lc-error">⚠ {{ error }}</div>
+    {% endif %}
+    <form method="post" id="loginForm" autocomplete="on">
+      <div class="form-item">
+        <label for="username">账号</label>
+        <input type="text" id="username" name="username" placeholder="请输入账号" required autofocus autocomplete="username">
+      </div>
+      <div class="form-item">
+        <label for="password">密码</label>
+        <input type="password" id="password" name="password" placeholder="请输入密码" required autocomplete="current-password">
+      </div>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <button class="btn btn-primary btn-login" id="loginBtn" type="submit">登 录</button>
+    </form>
+    <div class="lc-divider"></div>
+    <p class="lc-foot">首次登录后请及时修改密码<br>账号由学院管理员统一创建，如无法登录请联系管理员</p>
+  </div>
+</div>
+<script src="/static/ui.js"></script>
+<script>
+(function () {
+  var form = document.getElementById('loginForm');
+  var btn = document.getElementById('loginBtn');
+  form.addEventListener('submit', function () {
+    UI.busy(btn, true);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1631 @@
+{% extends "base.html" %}
+{% block title %}管理后台 - 导师双选{% endblock %}
+{% block body_class %}admin-body{% endblock %}
+{% block page_class %}admin-page{% endblock %}
+{% block content %}
+<div class="admin-shell" id="adminShell">
+  <aside class="admin-sider" aria-label="管理后台导航">
+    <nav class="admin-nav">
+      <div class="admin-nav-section">数据中心</div>
+      <button class="admin-nav-item active" data-tab="dashboard" type="button" aria-label="数据看板" onclick="tab('dashboard', this)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z"/></svg>
+        <span class="admin-nav-text">数据看板</span>
+      </button>
+      <div class="admin-nav-section">互选管理</div>
+      <button class="admin-nav-item" data-tab="overview" type="button" aria-label="互选控制" onclick="tab('overview', this)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3Zm2 0v7h7a9 9 0 0 0-7-7Z"/></svg>
+        <span class="admin-nav-text">互选控制</span>
+      </button>
+      <button class="admin-nav-item" data-tab="mentors" type="button" aria-label="导师管理" onclick="tab('mentors', this)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 8l10 5 8-4v6h2V8L12 3Zm-6 9v5c2.8 3 9.2 3 12 0v-5l-6 3-6-3Z"/></svg>
+        <span class="admin-nav-text">导师管理</span>
+      </button>
+      <button class="admin-nav-item" data-tab="students" type="button" aria-label="学生管理" onclick="tab('students', this)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 20h14c0-4-2.7-7-7-7s-7 3-7 7Zm14-6c2.7.5 4.5 2.6 4.5 6H18c0-2.4-.7-4.4-2-6Z"/></svg>
+        <span class="admin-nav-text">学生管理</span>
+      </button>
+      <button class="admin-nav-item" data-tab="matches" type="button" aria-label="匹配管理" onclick="tab('matches', this)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 6A3.5 3.5 0 1 0 4 9.5 3.5 3.5 0 0 0 7.5 6Zm9 12a3.5 3.5 0 1 0 3.5-3.5A3.5 3.5 0 0 0 16.5 18ZM8 8h7a3 3 0 0 1 3 3v1h-2v-1a1 1 0 0 0-1-1H8V8Zm8 8H9a3 3 0 0 1-3-3v-1h2v1a1 1 0 0 0 1 1h7v2Z"/></svg>
+        <span class="admin-nav-text">匹配管理</span>
+      </button>
+      <div class="admin-nav-section">系统记录</div>
+      <button class="admin-nav-item" data-tab="logs" type="button" aria-label="操作日志" onclick="tab('logs', this)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5V3Zm3 4v2h8V7H8Zm0 4v2h8v-2H8Zm0 4v2h6v-2H8Z"/></svg>
+        <span class="admin-nav-text">操作日志</span>
+      </button>
+      <button class="admin-nav-item" data-tab="export" type="button" aria-label="数据导出" onclick="tab('export', this)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h2v10l3-3 1.4 1.4L12 16.8l-5.4-5.4L8 10l3 3V3ZM4 18h16v3H4v-3Z"/></svg>
+        <span class="admin-nav-text">数据导出</span>
+      </button>
+    </nav>
+    <button class="admin-sider-collapse" type="button" onclick="toggleAdminSidebar()" aria-label="收起或展开侧边栏">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15.5 5-7 7 7 7 1.5-1.5-5.5-5.5L17 6.5 15.5 5Z"/></svg>
+      <span class="admin-nav-text">收起导航</span>
+    </button>
+  </aside>
+  <button class="admin-sider-mask" type="button" onclick="closeAdminSidebar()" aria-label="关闭导航"></button>
+
+  <section class="admin-workspace">
+    <div class="admin-page-header">
+      <button class="admin-mobile-menu" type="button" onclick="toggleAdminSidebar()" aria-label="打开导航">
+        <span></span><span></span><span></span>
+      </button>
+      <div>
+        <div class="admin-breadcrumb">导师双选 <span>/</span> 管理后台</div>
+        <h1 id="adminPageTitle">数据看板</h1>
+        <p id="adminPageDesc">查看互选进度、访问趋势与用户访问明细</p>
+      </div>
+      <div class="admin-head-meta"><span class="live-dot"></span><span id="adminGeneratedAt">实时数据</span></div>
+    </div>
+
+    <div id="banner" style="display:none"></div>
+    <div id="dashboard"></div>
+    <div id="overview" style="display:none"></div>
+    <div id="mentors" style="display:none"></div>
+    <div id="students" style="display:none"></div>
+    <div id="matches" style="display:none"></div>
+    <div id="logs" style="display:none"></div>
+    <div id="export" style="display:none"></div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+'use strict';
+const $ = UI.$;
+const esc = UI.esc;
+let info = { mode: 'realtime', open: true };
+let activeTab = 'dashboard';
+
+const ADMIN_PAGES = {
+  dashboard: ['数据看板', '查看互选进度、访问趋势与用户访问明细'],
+  overview: ['互选控制', '管理实时互选入口、登录安全设置和导师名额'],
+  mentors: ['导师管理', '维护导师账号、招生专业、招生类别与名额'],
+  students: ['学生管理', '查询并维护学生账号、专业与当前申请状态'],
+  matches: ['匹配管理', '查看实时配对结果，并由管理员调整或解除配对'],
+  logs: ['操作日志', '审计管理员的流程控制与数据修改操作'],
+  export: ['数据导出', '导出当前互选结果、申请明细和基础名单']
+};
+
+/* ---------- Tab ---------- */
+function tab(name, btn) {
+  activeTab = name;
+  document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  ['dashboard', 'overview', 'mentors', 'students', 'matches', 'logs', 'export'].forEach(t => $('#' + t).style.display = t === name ? '' : 'none');
+  $('#banner').style.display = name === 'overview' ? '' : 'none';
+  const page = ADMIN_PAGES[name] || ADMIN_PAGES.dashboard;
+  $('#adminPageTitle').textContent = page[0];
+  $('#adminPageDesc').textContent = page[1];
+  history.replaceState(null, '', '#' + name);
+  closeAdminSidebar();
+  ({ dashboard: loadDashboard, overview: loadOverview, mentors: loadMentors, students: loadStudents,
+     matches: loadMatches, logs: loadLogs, export: loadExport })[name]();
+}
+
+function toggleAdminSidebar() {
+  const shell = $('#adminShell');
+  if (window.matchMedia('(max-width: 900px)').matches) {
+    shell.classList.toggle('mobile-open');
+    return;
+  }
+  shell.classList.toggle('sider-collapsed');
+  localStorage.setItem('admin-sider-collapsed', shell.classList.contains('sider-collapsed') ? '1' : '0');
+}
+
+function closeAdminSidebar() {
+  $('#adminShell')?.classList.remove('mobile-open');
+}
+
+function formatCount(value) {
+  return Number(value || 0).toLocaleString('zh-CN');
+}
+
+const dashboardVisitorView = {
+  q: '', role: 'all', page: 1,
+  pageSize: Number(localStorage.getItem('dashboard-visitor-page-size')) || 20
+};
+if (![10, 20, 50, 100].includes(dashboardVisitorView.pageSize)) dashboardVisitorView.pageSize = 20;
+
+function dashboardVisitorUrl(page = dashboardVisitorView.page) {
+  return '/api/admin/dashboard?' + new URLSearchParams({
+    page, page_size: dashboardVisitorView.pageSize,
+    q: dashboardVisitorView.q, role: dashboardVisitorView.role
+  });
+}
+
+function dashboardVisitorRows(items) {
+  return items.map(item => `<tr>
+    <td><span class="mono">${esc(item.ip || 'unknown')}</span></td>
+    <td>${item.username ? `<span class="cell-main mono">${esc(item.username)}</span>` : '<span class="empty-inline">未登录</span>'}</td>
+    <td>${esc(item.display_name) || '<span class="empty-inline">—</span>'}</td>
+    <td><span class="tag ${item.role === 'student' ? 'tag-blue' : item.role === 'mentor' ? 'tag-green' : item.role === 'admin' ? 'tag-purple' : 'tag-gray'}">${esc(item.role_label)}</span></td>
+    <td><b>${formatCount(item.visits)}</b></td><td>${esc(item.last_visit)}</td>
+  </tr>`).join('') || '<tr><td colspan="6" class="empty">暂无符合条件的访问记录</td></tr>';
+}
+
+function dashboardPageTokens(page, totalPages) {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, index) => index + 1);
+  if (page <= 4) return [1, 2, 3, 4, 5, '…', totalPages];
+  if (page >= totalPages - 3) return [1, '…', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  return [1, '…', page - 1, page, page + 1, '…', totalPages];
+}
+
+function renderTemplatePager(p, pageFunction, pageSizeFunction, selectId) {
+  const start = p.total ? ((p.page - 1) * p.page_size + 1) : 0;
+  const end = Math.min(p.page * p.page_size, p.total);
+  const pages = dashboardPageTokens(p.page, p.total_pages).map((item, index) => item === '…'
+    ? `<span class="template-pager-ellipsis" data-index="${index}">…</span>`
+    : `<button class="template-page-btn ${item === p.page ? 'active' : ''}" type="button" onclick="${pageFunction}(${item})" ${item === p.page ? 'aria-current="page"' : ''}>${item}</button>`).join('');
+  return `<div class="template-pager">
+    <span class="template-pager-total">第 ${start}-${end} 条/总共 ${p.total} 条</span>
+    <div class="template-pager-pages">
+      <button class="template-page-btn template-page-arrow" type="button" aria-label="上一页" onclick="${pageFunction}(${p.page - 1})" ${p.page <= 1 ? 'disabled' : ''}>‹</button>
+      ${pages}
+      <button class="template-page-btn template-page-arrow" type="button" aria-label="下一页" onclick="${pageFunction}(${p.page + 1})" ${p.page >= p.total_pages ? 'disabled' : ''}>›</button>
+    </div>
+    <select id="${selectId}" aria-label="每页展示数" onchange="${pageSizeFunction}()">
+      ${[10, 20, 50, 100].map(size => `<option value="${size}" ${size === p.page_size ? 'selected' : ''}>${size} 条/页</option>`).join('')}
+    </select>
+  </div>`;
+}
+
+function dashboardVisitorPager(p) {
+  return renderTemplatePager(p, 'loadDashboardVisitors', 'changeDashboardVisitorPageSize', 'dashboardVisitorPageSize');
+}
+
+async function loadDashboardVisitors(page = 1) {
+  const panel = document.querySelector('.dashboard-visitors-panel');
+  panel?.classList.add('is-loading');
+  try {
+    const d = await UI.api(dashboardVisitorUrl(page));
+    dashboardVisitorView.page = d.visitors_pagination.page;
+    $('#dashboardVisitorBody').innerHTML = dashboardVisitorRows(d.visitors);
+    $('#dashboardVisitorPager').innerHTML = dashboardVisitorPager(d.visitors_pagination);
+    $('#adminGeneratedAt').textContent = `更新于 ${d.generated_at.slice(11, 16)}`;
+  } finally {
+    panel?.classList.remove('is-loading');
+  }
+}
+
+function setDashboardVisitorRole(role) {
+  dashboardVisitorView.role = role;
+  document.querySelectorAll('.visitor-segmented button').forEach(button =>
+    button.classList.toggle('active', button.dataset.role === role));
+  loadDashboardVisitors(1);
+}
+
+function searchDashboardVisitors() {
+  dashboardVisitorView.q = $('#dashboardVisitorSearch')?.value.trim() || '';
+  loadDashboardVisitors(1);
+}
+
+function changeDashboardVisitorPageSize() {
+  dashboardVisitorView.pageSize = Number($('#dashboardVisitorPageSize').value);
+  localStorage.setItem('dashboard-visitor-page-size', String(dashboardVisitorView.pageSize));
+  loadDashboardVisitors(1);
+}
+
+function dashboardMiniBars(items, key, tone = '') {
+  const max = Math.max(1, ...items.map(item => Number(item[key] || 0)));
+  return `<div class="dashboard-mini-bars ${tone}">${items.map(item =>
+    `<i style="height:${Math.max(10, Math.round(Number(item[key] || 0) / max * 100))}%" title="${esc(item.label)}：${item[key]}"></i>`
+  ).join('')}</div>`;
+}
+
+function dashboardAreaChart(items) {
+  const width = 760, height = 250, left = 42, right = 18, top = 22, bottom = 38;
+  const values = items.map(item => Number(item.visits || 0));
+  const max = Math.max(1, ...values);
+  const usableW = width - left - right, usableH = height - top - bottom;
+  const points = items.map((item, index) => {
+    const x = left + (items.length === 1 ? usableW / 2 : index * usableW / (items.length - 1));
+    const y = top + usableH - Number(item.visits || 0) / max * usableH;
+    return { x, y, item };
+  });
+  const line = points.map((point, index) => `${index ? 'L' : 'M'}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ');
+  const area = `${line} L${points.at(-1).x.toFixed(1)},${height - bottom} L${points[0].x.toFixed(1)},${height - bottom} Z`;
+  const grids = [0, .25, .5, .75, 1].map(rate => {
+    const y = top + usableH * rate;
+    const value = Math.round(max * (1 - rate));
+    return `<line x1="${left}" y1="${y}" x2="${width - right}" y2="${y}"/><text x="${left - 10}" y="${y + 4}" text-anchor="end">${value}</text>`;
+  }).join('');
+  const labels = points.map(point => `<text x="${point.x}" y="${height - 13}" text-anchor="middle">${esc(point.item.label)}</text>`).join('');
+  const dots = points.map(point => `<g class="dashboard-chart-point" role="button" tabindex="0" onclick="openDashboardDetail('visits','date','${esc(point.item.date)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardDetail('visits','date','${esc(point.item.date)}')}"><circle class="chart-hit" cx="${point.x}" cy="${point.y}" r="13"/><circle class="chart-dot" cx="${point.x}" cy="${point.y}" r="4"/><title>${esc(point.item.date)}：${point.item.visits} 次访问，点击查看明细</title></g>`).join('');
+  return `<svg class="dashboard-area-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="近七天访问趋势">
+    <defs><linearGradient id="visitArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1677ff" stop-opacity=".34"/><stop offset="1" stop-color="#1677ff" stop-opacity=".03"/></linearGradient></defs>
+    <g class="chart-grid">${grids}</g><path class="chart-area" d="${area}"/><path class="chart-line" d="${line}"/>
+    <g class="chart-dots">${dots}</g><g class="chart-labels">${labels}</g>
+  </svg>`;
+}
+
+function dashboardRoleChart(roles) {
+  const colors = { student: '#1677ff', mentor: '#52c41a', admin: '#722ed1' };
+  const total = roles.reduce((sum, item) => sum + Number(item.visits || 0), 0);
+  let cursor = 0;
+  const parts = roles.map(item => {
+    const start = cursor;
+    cursor += total ? Number(item.visits || 0) / total * 100 : 0;
+    return `${colors[item.role] || '#faad14'} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
+  });
+  const gradient = parts.length ? parts.join(',') : '#f0f0f0 0 100%';
+  return `<button class="role-donut" type="button" style="background:conic-gradient(${gradient})" onclick="openDashboardDetail('visits','role','authenticated')" aria-label="查看已登录账户访问明细"><div><b>${formatCount(total)}</b><span>账户访问</span></div></button>
+    <div class="role-legend">${roles.map(item => `<button type="button" onclick="openDashboardDetail('visits','role','${item.role}')" title="查看${esc(item.label)}访问明细"><i style="background:${colors[item.role] || '#faad14'}"></i><span>${esc(item.label)}</span><b>${formatCount(item.visits)}</b><small>${item.accounts} 个账户</small></button>`).join('') || '<p class="empty-inline">暂无已登录访问记录</p>'}</div>`;
+}
+
+const dashboardDetailView = { type: '', filterKey: '', filterValue: '', pageSize: 20 };
+let dashboardDetailRequestId = 0;
+
+function dashboardDetailRows(d) {
+  if (d.type === 'visits') return `<table class="dashboard-detail-table"><thead><tr><th>访问 IP</th><th>账号</th><th>姓名</th><th>身份</th><th>访问次数</th><th>最近访问</th></tr></thead><tbody>${d.rows.map(row => `<tr>
+    <td class="mono">${esc(row.ip || 'unknown')}</td><td class="mono">${esc(row.username) || '<span class="empty-inline">未登录</span>'}</td>
+    <td>${esc(row.display_name) || '<span class="empty-inline">—</span>'}</td><td><span class="tag ${row.role === 'student' ? 'tag-blue' : row.role === 'mentor' ? 'tag-green' : row.role === 'admin' ? 'tag-purple' : 'tag-gray'}">${esc(row.role_label)}</span></td>
+    <td><b>${formatCount(row.visits)}</b></td><td>${esc(row.last_visit)}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">暂无访问记录</td></tr>'}</tbody></table>`;
+  if (d.type === 'unselected') return `<table class="dashboard-detail-table"><thead><tr><th>学号</th><th>姓名</th><th>专业</th><th>手机号</th></tr></thead><tbody>${d.rows.map(row => `<tr><td class="mono">${esc(row.username)}</td><td><b>${esc(row.name)}</b></td><td>${esc(row.major) || '—'}</td><td>${esc(row.phone) || '—'}</td></tr>`).join('') || '<tr><td colspan="4" class="empty">暂无未选择学生</td></tr>'}</tbody></table>`;
+  const pending = d.type === 'pending';
+  return `<table class="dashboard-detail-table"><thead><tr><th>学号</th><th>姓名</th><th>专业</th><th>${pending ? '申请导师' : '配对导师'}</th><th>${pending ? '申请时间' : '配对时间'}</th></tr></thead><tbody>${d.rows.map(row => `<tr>
+    <td class="mono">${esc(row.username)}</td><td><b>${esc(row.name)}</b></td><td>${esc(row.major) || '—'}</td>
+    <td><b>${esc(row.mentor_name)}</b><div class="cell-sub mono">${esc(row.mentor_username)}</div></td><td>${esc(row.created_at)}</td></tr>`).join('') || `<tr><td colspan="5" class="empty">暂无${pending ? '待审核' : '已录'}学生</td></tr>`}</tbody></table>`;
+}
+
+async function loadDashboardDetail(page = 1) {
+  const requestId = ++dashboardDetailRequestId;
+  const query = new URLSearchParams({ type: dashboardDetailView.type, page,
+    page_size: dashboardDetailView.pageSize });
+  if (dashboardDetailView.filterKey && dashboardDetailView.filterValue) {
+    query.set(dashboardDetailView.filterKey, dashboardDetailView.filterValue);
+  }
+  try {
+    const d = await UI.api('/api/admin/dashboard/detail?' + query);
+    if (requestId !== dashboardDetailRequestId || !$('#modalMask')?.classList.contains('show')) return;
+    const html = `<div class="modal-head dashboard-detail-head"><div><h3>${esc(d.title)}</h3><p>点击看板指标下钻查看的实时名单</p></div><button class="modal-close" type="button" onclick="UI.closeModal()">✕</button></div>
+      <div class="modal-body dashboard-detail-body"><div class="table-wrap">${dashboardDetailRows(d)}</div></div>
+      ${renderTemplatePager(d.pagination, 'loadDashboardDetail', 'changeDashboardDetailPageSize', 'dashboardDetailPageSize')}
+      <div class="modal-foot"><button class="btn btn-default" type="button" onclick="UI.closeModal()">关闭</button></div>`;
+    const box = $('#modalBox'); box.className = 'modal modal-lg dashboard-detail-modal'; box.innerHTML = html;
+  } catch (error) {
+    if (requestId === dashboardDetailRequestId) { UI.toast(error.message, 'error'); UI.closeModal(); }
+  }
+}
+
+function openDashboardDetail(type, filterKey = '', filterValue = '') {
+  dashboardDetailView.type = type;
+  dashboardDetailView.filterKey = filterKey;
+  dashboardDetailView.filterValue = filterValue;
+  UI.openModal('<div class="dashboard-detail-loading"><span class="spinner"></span><span>正在加载明细…</span></div>', { size: 'lg' });
+  loadDashboardDetail(1);
+}
+
+function changeDashboardDetailPageSize() {
+  dashboardDetailView.pageSize = Number($('#dashboardDetailPageSize').value);
+  loadDashboardDetail(1);
+}
+
+async function loadDashboard() {
+  const d = await UI.api(dashboardVisitorUrl());
+  dashboardVisitorView.page = d.visitors_pagination.page;
+  const st = d.stats;
+  $('#adminGeneratedAt').textContent = `更新于 ${d.generated_at.slice(11, 16)}`;
+  const pairingPct = Math.max(0, Math.min(100, Number(st.pairing_rate || 0)));
+  const unselectedPct = st.students ? Math.round(st.unselected * 1000 / st.students) / 10 : 0;
+  $('#dashboard').innerHTML = `
+    <div class="dashboard-stat-grid">
+      <article class="dashboard-stat-card dashboard-clickable" role="button" tabindex="0" title="点击查看访问明细" onclick="openDashboardDetail('visits')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardDetail('visits')}">
+        <div class="dashboard-stat-head"><span>访问量</span><i title="登录页及各角色主页的真实页面访问次数">i</i></div>
+        <strong>${formatCount(st.visits)}</strong>
+        ${dashboardMiniBars(d.daily, 'visits', 'tone-blue')}
+        <footer><span>今日访问</span><b>${formatCount(st.today_visits)}</b><em>${st.unique_ips} 个独立 IP</em></footer>
+      </article>
+      <article class="dashboard-stat-card dashboard-clickable" role="button" tabindex="0" title="点击查看已录学生名单" onclick="openDashboardDetail('matched')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardDetail('matched')}">
+        <div class="dashboard-stat-head"><span>已录学生</span><i title="当前已经建立有效导师配对的学生人数">i</i></div>
+        <strong>${formatCount(st.matched)}</strong>
+        <div class="dashboard-stat-progress"><i style="width:${pairingPct}%"></i></div>
+        <footer><span>配对完成率</span><b>${pairingPct}%</b><em>共 ${st.students} 名学生</em></footer>
+      </article>
+      <article class="dashboard-stat-card dashboard-clickable" role="button" tabindex="0" title="点击查看未选择学生名单" onclick="openDashboardDetail('unselected')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardDetail('unselected')}">
+        <div class="dashboard-stat-head"><span>未选择学生</span><i title="尚未配对且当前没有待审核申请的学生">i</i></div>
+        <strong class="tone-warning">${formatCount(st.unselected)}</strong>
+        <div class="dashboard-stat-progress tone-orange"><i style="width:${unselectedPct}%"></i></div>
+        <footer><span>未选择比例</span><b>${unselectedPct}%</b><em>未提交有效申请</em></footer>
+      </article>
+      <article class="dashboard-stat-card dashboard-clickable" role="button" tabindex="0" title="点击查看待审核学生名单" onclick="openDashboardDetail('pending')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDashboardDetail('pending')}">
+        <div class="dashboard-stat-head"><span>等待审核</span><i title="已提交申请、正在等待导师处理的学生人数">i</i></div>
+        <strong class="tone-primary">${formatCount(st.pending)}</strong>
+        <div class="dashboard-pending-visual"><i></i><i></i><i></i><span>${st.pending ? '等待导师处理' : '当前无待审申请'}</span></div>
+        <footer><span>待审核学生</span><b>${formatCount(st.pending)}</b><em>${st.account_visitors} 个账户访问过</em></footer>
+      </article>
+    </div>
+
+    <div class="dashboard-chart-grid">
+      <section class="dashboard-panel dashboard-trend-panel">
+        <div class="dashboard-panel-head"><div><h2>访问趋势</h2><p>最近 7 天页面访问量</p></div><span class="tag tag-blue">实时统计</span></div>
+        ${dashboardAreaChart(d.daily)}
+      </section>
+      <section class="dashboard-panel dashboard-role-panel">
+        <div class="dashboard-panel-head"><div><h2>访问角色分布</h2><p>已登录账户的访问构成</p></div></div>
+        <div class="role-chart-wrap">${dashboardRoleChart(d.roles)}</div>
+      </section>
+    </div>
+
+    <section class="dashboard-panel dashboard-visitors-panel">
+      <div class="dashboard-panel-head">
+        <div><h2>访问 IP 与对应账户</h2><p>按 IP 和账户汇总最近访问情况，未登录访问单独显示</p></div>
+        <span class="dashboard-summary">共 ${st.unique_ips} 个 IP · ${st.account_visitors} 个账户</span>
+      </div>
+      <div class="dashboard-visitor-toolbar">
+        <div class="visitor-segmented" role="group" aria-label="访问身份分类">
+          ${[['all', '全部'], ['student', '学生'], ['mentor', '导师'], ['admin', '管理员'], ['anonymous', '未登录']].map(([role, label]) =>
+            `<button type="button" data-role="${role}" class="${dashboardVisitorView.role === role ? 'active' : ''}" onclick="setDashboardVisitorRole('${role}')">${label}</button>`).join('')}
+        </div>
+        <div class="visitor-searchbox">
+          <input id="dashboardVisitorSearch" type="search" value="${esc(dashboardVisitorView.q)}" placeholder="搜索 IP、账号或姓名" onkeydown="if(event.key==='Enter'){event.preventDefault();searchDashboardVisitors()}">
+          <button type="button" aria-label="搜索" onclick="searchDashboardVisitors()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 20-5.6-5.6a7 7 0 1 0-1.4 1.4L19.6 21 21 20ZM5 10.5a5.5 5.5 0 1 1 11 0 5.5 5.5 0 0 1-11 0Z"/></svg></button>
+        </div>
+      </div>
+      <div class="table-wrap has-hint"><table class="dashboard-visitor-table">
+        <thead><tr><th>访问 IP</th><th>账户</th><th>姓名</th><th>身份</th><th>访问次数</th><th>最近访问</th></tr></thead>
+        <tbody id="dashboardVisitorBody">${dashboardVisitorRows(d.visitors)}</tbody>
+      </table></div>
+      <div id="dashboardVisitorPager">${dashboardVisitorPager(d.visitors_pagination)}</div>
+    </section>`;
+}
+
+/* ---------- 互选控制 ---------- */
+function renderBanner(inf) {
+  $('#banner').innerHTML = inf.open
+    ? '<div class="banner banner-info"><span class="banner-dot"></span>实时互选进行中：学生可提交申请，导师可即时审核。</div>'
+    : '<div class="banner banner-paused"><span class="banner-dot"></span>实时互选已暂停学生新申请：导师仍可处理已有申请。</div>';
+}
+
+async function loadOverview() {
+  const d = await UI.api('/api/admin/overview');
+  window._overviewMentors = d.mentors;
+  info = d.info;
+  renderBanner(d.info);
+  const st = d.stats;
+  $('#overview').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="s-label">导师数</div><div class="s-num tone-primary">${st.mentors}</div><div class="s-extra">启用中的导师账号</div></div>
+      <div class="stat-card"><div class="s-label">学生数</div><div class="s-num">${st.students}</div><div class="s-extra">全部学生账号</div></div>
+      <div class="stat-card"><div class="s-label">待审核申请</div><div class="s-num tone-warning">${st.submitted}</div><div class="s-extra">等待导师处理</div></div>
+      <div class="stat-card"><div class="s-label">已完成配对</div><div class="s-num tone-success">${st.matched}</div><div class="s-extra">当前有效配对</div></div>
+      <div class="stat-card"><div class="s-label">未匹配学生</div><div class="s-num ${st.unmatched > 0 ? 'tone-error' : 'tone-success'}">${st.unmatched}</div><div class="s-extra">${st.unmatched > 0 ? '尚未配对的学生' : '全部学生均已配对'}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="ch-title">实时互选控制</div>
+          <div class="ch-desc">开放时学生可提交新申请；暂停只阻止新申请，导师仍可处理已有申请。</div>
+        </div>
+        <span id="phaseStatusTag"></span>
+      </div>
+      <div class="setting-row">
+        <div class="setting-main">
+          <div class="setting-name">学生申请入口</div>
+          <div class="setting-desc" id="phaseStatusText">加载中…</div>
+        </div>
+        <button class="switch" id="phaseSwitch" type="button" role="switch" aria-checked="false" onclick="togglePhase()"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-main">
+          <div class="setting-name">每位导师最多录取 3 名学硕</div>
+          <div class="setting-desc" id="xueshuLimitText">加载中…</div>
+        </div>
+        <button class="switch" id="xueshuLimitSwitch" type="button" role="switch" aria-checked="false" onclick="toggleXueshuLimit()"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-main">
+          <div class="setting-name">学生端热门导师火苗标记</div>
+          <div class="setting-desc" id="mentorHotBadgeText">加载中…</div>
+        </div>
+        <button class="switch" id="mentorHotBadgeSwitch" type="button" role="switch" aria-checked="false" onclick="toggleMentorHotBadge()"></button>
+      </div>
+      <div class="setting-row">
+        <div class="setting-main">
+          <div class="setting-name">清空全部申请与配对</div>
+          <div class="setting-desc">删除全部实时申请历史与配对结果，学生恢复为未选择状态。操作前请先导出备份。</div>
+        </div>
+        <button class="btn btn-danger" type="button" onclick="resetRealtimeData()">清空全部申请与配对</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="ch-title">登录安全设置</div>
+          <div class="ch-desc">测试阶段可临时关闭首次登录强制修改密码</div>
+        </div>
+        <span id="pwdPolicyTag"></span>
+      </div>
+      <div class="setting-row">
+        <div class="setting-main">
+          <div class="setting-name">首次登录强制修改密码</div>
+          <div class="setting-desc" id="pwdPolicyText">加载中…</div>
+        </div>
+        <button class="switch" id="pwdPolicySwitch" type="button" role="switch" aria-checked="false" onclick="togglePasswordPolicy()"></button>
+      </div>
+    </div>
+
+    <div class="card table-card">
+      <div class="card-head">
+        <div>
+          <div class="ch-title">导师申请与名额</div>
+          <div class="ch-desc">导师达到总名额后自动退回全部待审核申请；学硕上限开启时，第 3 名学硕确认后仅退回剩余学硕申请</div>
+        </div>
+      </div>
+      <div class="table-wrap has-hint"><table>
+        <thead><tr><th>导师账号</th><th>导师</th><th>招生名额</th><th>待审核申请</th><th>申请名单</th><th>已配对</th><th>已录取学硕</th><th>名额占用</th></tr></thead>
+        <tbody>${d.mentors.map(m => {
+          const used = m.occupied ?? (m.matched + m.approved);
+          const pct = Math.round(used / m.quota * 100);
+          const over = pct > 100;
+          const appliedOver = m.applied > m.quota;
+          return `<tr>
+            <td><span class="mono">${esc(m.username)}</span></td>
+            <td><span class="cell-main">${esc(m.name)}</span>${m.title ? `<div class="cell-sub">${esc(m.title)}</div>` : ''}</td>
+            <td>${m.quota}</td>
+            <td><span class="${appliedOver ? 'tag tag-red' : 'tag tag-orange'}">${m.applied} 人</span></td>
+            <td>${(m.applied1_names || []).length ? `<button class="btn btn-default btn-xs" type="button" onclick="showApplied1(${m.id})">查看（${(m.applied1_names || []).length} 人）</button>` : '<span class="empty-inline">—</span>'}</td>
+            <td>${m.matched}</td>
+            <td><span class="tag ${m.xueshu_matched > 3 ? 'tag-red' : (m.xueshu_matched === 3 ? 'tag-orange' : 'tag-blue')}">${m.xueshu_matched}/3</span></td>
+            <td style="white-space:nowrap"><span class="qbar"><i class="${over ? 'over' : ''}" style="width:${Math.min(pct, 100)}%"></i></span>
+              <span class="qbar-num ${over ? 'over' : ''}">${used}/${m.quota}</span></td>
+          </tr>`;
+        }).join('') || '<tr><td colspan="8" class="empty">暂无导师</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
+  renderPhaseControl(d);
+  renderXueshuLimit(d);
+  renderMentorHotBadge(d);
+  renderPwdPolicy(d);
+}
+
+function renderPhaseControl(d) {
+  const sw = $('#phaseSwitch');
+  sw.classList.toggle('on', d.info.open);
+  sw.setAttribute('aria-checked', d.info.open ? 'true' : 'false');
+  $('#phaseStatusTag').innerHTML = d.info.open
+    ? '<span class="tag tag-blue">申请开放中</span>'
+    : '<span class="tag tag-gray">已暂停新申请</span>';
+  $('#phaseStatusText').textContent = d.info.open
+    ? '学生当前可提交新申请，导师同意后立即完成配对。'
+    : '学生当前不能提交新申请；导师仍可处理已有申请，无需管理员介入。';
+}
+
+function renderPwdPolicy(d) {
+  const sw = $('#pwdPolicySwitch');
+  const on = d.info.force_password_change;
+  sw.classList.toggle('on', on);
+  sw.setAttribute('aria-checked', on ? 'true' : 'false');
+  $('#pwdPolicyTag').innerHTML = on
+    ? '<span class="tag tag-green">已开启</span>'
+    : '<span class="tag tag-gray">已关闭（测试模式）</span>';
+  $('#pwdPolicyText').textContent = on
+    ? '新导入的账号首次登录必须修改初始密码。'
+    : '用户可直接进入系统；原“待改密”标记不会被清除，重新开启后仍会生效。';
+}
+
+function renderXueshuLimit(d) {
+  const sw = $('#xueshuLimitSwitch');
+  const on = d.info.xueshu_limit_enabled;
+  sw.classList.toggle('on', on);
+  sw.setAttribute('aria-checked', on ? 'true' : 'false');
+  const reached = d.stats.xueshu_limit_reached || 0;
+  const exceeded = d.stats.xueshu_limit_exceeded || 0;
+  $('#xueshuLimitText').textContent = on
+    ? `已开启：导师确认和管理员安排均受限；当前 ${reached} 位导师达到上限${exceeded ? `，其中 ${exceeded} 位存在历史超额` : ''}。`
+    : '已关闭：导师可在总招生名额内录取超过 3 名学硕。';
+}
+
+function renderMentorHotBadge(d) {
+  const sw = $('#mentorHotBadgeSwitch');
+  const on = d.info.mentor_hot_badge_enabled;
+  sw.classList.toggle('on', on);
+  sw.setAttribute('aria-checked', on ? 'true' : 'false');
+  const hotCount = d.stats.hot_mentor_count || 0;
+  $('#mentorHotBadgeText').textContent = on
+    ? `已开启：有效选择人数达到招生名额 2 倍时显示火苗；当前 ${hotCount} 位导师符合条件。`
+    : '已关闭：学生端不显示热门标记；该功能不会限制学生提交申请。';
+}
+
+async function togglePhase() {
+  const target = !info.open;
+  const ok = await UI.confirm({
+    title: target ? '开放学生申请' : '暂停学生新申请',
+    message: target
+      ? '开放后学生可以立即提交新的导师申请，确认开放吗？'
+      : '暂停只会阻止学生提交新申请，导师仍可继续处理已有申请。确认暂停吗？',
+    okText: target ? '确认开放' : '确认暂停'
+  });
+  if (!ok) { renderPhaseControl(info); return; }
+  const sw = $('#phaseSwitch');
+  sw.setAttribute('disabled', '');
+  try {
+    await UI.api('/api/admin/phase', { method: 'POST', body: JSON.stringify({ action: target ? 'open' : 'close' }) });
+    UI.toast(target ? '已开放学生申请' : '已暂停学生新申请');
+    loadOverview();
+  } catch (e) { UI.toast(e.message, 'error'); sw.removeAttribute('disabled'); }
+}
+
+async function togglePasswordPolicy() {
+  const target = !info.force_password_change;
+  const ok = await UI.confirm({
+    title: target ? '开启强制修改密码' : '关闭强制修改密码',
+    message: target
+      ? '开启后，新导入且未修改过初始密码的账号，首次登录必须修改密码。'
+      : '关闭后用户可直接进入系统，原“待改密”标记不会被清除。确认关闭吗？',
+    okText: target ? '确认开启' : '确认关闭',
+    danger: !target
+  });
+  if (!ok) { renderPwdPolicy(info); return; }
+  const sw = $('#pwdPolicySwitch');
+  sw.setAttribute('disabled', '');
+  try {
+    await UI.api('/api/admin/phase', { method: 'POST', body: JSON.stringify({ action: target ? 'password_change_on' : 'password_change_off' }) });
+    UI.toast('设置已更新');
+    loadOverview();
+  } catch (e) { UI.toast(e.message, 'error'); sw.removeAttribute('disabled'); }
+}
+
+async function toggleXueshuLimit() {
+  const target = !info.xueshu_limit_enabled;
+  const ok = await UI.confirm({
+    title: target ? '开启学硕录取上限' : '关闭学硕录取上限',
+    message: target
+      ? '开启后，每位导师最多录取 3 名学硕；已达到上限导师的剩余学硕待审核申请将自动退回，现有配对不会被删除。'
+      : '关闭后，导师可在总招生名额内继续录取超过 3 名学硕；此前自动退回的申请不会恢复。',
+    okText: target ? '确认开启' : '确认关闭',
+    danger: !target
+  });
+  if (!ok) { renderXueshuLimit({ info, stats: {} }); return; }
+  const sw = $('#xueshuLimitSwitch');
+  sw.setAttribute('disabled', '');
+  try {
+    const r = await UI.api('/api/admin/phase', {
+      method: 'POST', body: JSON.stringify({ action: target ? 'xueshu_limit_on' : 'xueshu_limit_off' })
+    });
+    UI.toast(target && r.cancelled
+      ? `设置已开启，已自动退回 ${r.cancelled} 条学硕申请`
+      : '设置已更新');
+    loadOverview();
+  } catch (e) { UI.toast(e.message, 'error'); sw.removeAttribute('disabled'); }
+}
+
+async function toggleMentorHotBadge() {
+  const target = !info.mentor_hot_badge_enabled;
+  const ok = await UI.confirm({
+    title: target ? '开启热门导师火苗标记' : '关闭热门导师火苗标记',
+    message: target
+      ? '开启后，当前有效选择人数达到招生名额 2 倍的导师，将在学生端姓名旁显示小火苗。系统不会展示具体人数，也不会限制学生申请。'
+      : '关闭后学生端将不再显示火苗，现有申请与配对数据不会发生变化。',
+    okText: target ? '确认开启' : '确认关闭'
+  });
+  if (!ok) { renderMentorHotBadge({ info, stats: {} }); return; }
+  const sw = $('#mentorHotBadgeSwitch');
+  sw.setAttribute('disabled', '');
+  try {
+    await UI.api('/api/admin/phase', {
+      method: 'POST', body: JSON.stringify({ action: target ? 'mentor_hot_badge_on' : 'mentor_hot_badge_off' })
+    });
+    UI.toast('设置已更新');
+    loadOverview();
+  } catch (e) { UI.toast(e.message, 'error'); sw.removeAttribute('disabled'); }
+}
+
+async function resetRealtimeData() {
+  const ok = await UI.confirm({
+    title: '清空全部申请与配对',
+    message: '该操作不可撤销：将删除全部实时申请历史和配对结果，学生恢复为未选择状态。\n请确认已导出或备份数据后再执行。',
+    okText: '确认清空', danger: true
+  });
+  if (!ok) return;
+  try {
+    await UI.api('/api/admin/phase', { method: 'POST', body: JSON.stringify({ action: 'reset_all', confirm: 'RESET' }) });
+    UI.toast('已清空全部申请与配对数据');
+    loadOverview();
+  } catch (e) { UI.toast(e.message, 'error'); }
+}
+
+/* ---------- 导师管理 ---------- */
+const mentorView = {
+  q: '', college: '', category: '', major: '', status: '', page: 1,
+  pageSize: Number(localStorage.getItem('mentor-page-size')) || 20
+};
+if (![10, 20, 50, 100].includes(mentorView.pageSize)) mentorView.pageSize = 20;
+
+async function loadMentors(page = mentorView.page) {
+  mentorView.page = page;
+  const query = new URLSearchParams({ q: mentorView.q, college: mentorView.college,
+    category: mentorView.category,
+    major: mentorView.major, status: mentorView.status,
+    page: mentorView.page, page_size: mentorView.pageSize });
+  const d = await UI.api('/api/admin/mentors?' + query);
+  mentorView.page = d.pagination.page;
+  window._mentors = d.mentors;
+  $('#mentors').innerHTML = `
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="ch-title">导师信息总表（学生端下载）</div>
+          <div class="ch-desc">上传后学生端可下载此表；未上传时学生下载空白占位表（含表头）。支持 .xlsx / .xls / .csv。</div>
+        </div>
+      </div>
+      <div class="form-row" style="align-items:center">
+        <div class="form-item" style="flex:0 1 340px;min-width:220px"><input type="file" id="infoFile" accept=".xlsx,.xls,.csv"></div>
+        <button class="btn btn-primary" type="button" onclick="uploadInfo(this)">上传</button>
+        <button class="btn btn-danger-outline" type="button" onclick="delInfo()">删除上传</button>
+        <a class="btn btn-default" href="/download/mentor_info" target="_blank" rel="noopener">下载测试</a>
+      </div>
+      <div id="infoStatus" class="hint" style="margin-top:10px">加载中…</div>
+    </div>
+
+    <div class="card table-card">
+      <div class="card-head">
+        <div>
+          <div class="ch-title">导师列表</div>
+          <div class="ch-desc">共 ${d.pagination.total} 位导师 · 默认按学院排列，支持学院、招生类别、专业与状态筛选</div>
+        </div>
+        <div class="ch-actions">
+          <button class="btn btn-primary" type="button" onclick="editMentor()">＋ 新增导师</button>
+          <button class="btn btn-default" type="button" onclick="showImport('mentor')">批量导入</button>
+        </div>
+      </div>
+      <div class="management-template-toolbar mentor-template-toolbar">
+        <div class="management-filter-controls mentor-filter-controls">
+          <div class="visitor-searchbox mentor-searchbox">
+            <input type="search" id="mentorSearch" value="${esc(mentorView.q)}" placeholder="搜索姓名或工号" onkeydown="if(event.key==='Enter'){event.preventDefault();applyMentorFilters()}">
+            <button type="button" aria-label="搜索导师" onclick="applyMentorFilters()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 20-5.6-5.6a7 7 0 1 0-1.4 1.4L19.6 21 21 20ZM5 10.5a5.5 5.5 0 1 1 11 0 5.5 5.5 0 0 1-11 0Z"/></svg></button>
+          </div>
+          <select id="mentorCollege" aria-label="按学院筛选" onchange="applyMentorFilters()"><option value="">全部学院</option>${d.colleges.map(value => `<option value="${esc(value)}" ${value === mentorView.college ? 'selected' : ''}>${esc(value)}</option>`).join('')}</select>
+          <select id="mentorCategory" aria-label="按招生类别筛选" onchange="applyMentorFilters()"><option value="">全部招生类别</option>${d.categories.map(value => `<option value="${esc(value)}" ${value === mentorView.category ? 'selected' : ''}>${esc(value)}</option>`).join('')}</select>
+          <select id="mentorMajor" aria-label="按专业筛选" onchange="applyMentorFilters()"><option value="">全部可招专业</option>${d.majors.map(value => `<option value="${esc(value)}" ${value === mentorView.major ? 'selected' : ''}>${esc(value)}</option>`).join('')}</select>
+          <select id="mentorStatus" aria-label="按账号状态筛选" onchange="applyMentorFilters()"><option value="">全部状态</option><option value="active" ${mentorView.status === 'active' ? 'selected' : ''}>启用</option><option value="disabled" ${mentorView.status === 'disabled' ? 'selected' : ''}>停用</option></select>
+          <button class="btn btn-default" type="button" onclick="resetMentorFilters()">重置</button>
+        </div>
+        <div class="batch-bar" id="mBatchBar" style="display:none">
+          <span class="tag tag-blue" id="mSelCount">已选 0 项</span>
+          <button class="btn btn-primary btn-sm" type="button" onclick="batchResetPwd('mentor')">批量重置密码</button>
+          <button class="btn btn-default btn-sm" type="button" onclick="batchEdit('mentor')">批量编辑</button>
+          <button class="btn btn-danger-outline btn-sm" type="button" onclick="batchDelete('mentor')">批量删除</button>
+          <button class="btn btn-text btn-sm" type="button" onclick="clearSel('mentor')">取消选择</button>
+        </div>
+      </div>
+      <div class="table-wrap has-hint mentor-table-wrap"><table>
+        <thead><tr>
+          <th style="width:34px"><input type="checkbox" id="mAll" onclick="toggleAll('mentor', this)" title="全选"></th>
+          <th>工号</th><th>姓名</th><th>学院</th><th>招生类别</th><th>可招生专业</th><th>招生名额</th><th>已配对</th><th>状态</th><th>操作</th>
+        </tr></thead><tbody>
+        ${d.mentors.map(m => `<tr>
+          <td style="text-align:center"><input type="checkbox" class="row-cb" data-kind="mentor" data-id="${m.id}" ${selMentor.has(m.id) ? 'checked' : ''} onchange="updateSel('mentor')"></td>
+          <td><span class="mono">${esc(m.username)}</span></td>
+          <td><span class="cell-main">${esc(m.name)}</span></td>
+          <td class="mentor-college-cell">${esc(m.college || '未填写')}</td>
+          <td>${esc(m.admission_category || '—')}</td>
+          <td style="max-width:300px"><div class="cell-sub">${(m.allowed_majors || []).map(esc).join('、') || '<span class="empty-inline">不限专业</span>'}</div></td>
+          <td>${m.quota}</td><td>${m.approved_cur || 0}</td>
+          <td>${m.active ? '<span class="tag tag-green">启用</span>' : '<span class="tag tag-gray">停用</span>'}</td>
+          <td class="cell-actions">
+            <button class="btn btn-default btn-sm" type="button" onclick="editMentor(${m.id})">编辑</button>
+            <button class="btn btn-default btn-sm" type="button" onclick="resetPwd('mentor', ${m.id})">重置密码</button>
+            <button class="btn btn-default btn-sm" type="button" onclick="toggleMentor(${m.id})">${m.active ? '停用' : '启用'}</button>
+            <button class="btn btn-danger-outline btn-sm" type="button" onclick="delMentor(${m.id})">删除</button>
+          </td></tr>`).join('') || '<tr><td colspan="10" class="empty">暂无符合条件的导师</td></tr>'}
+        </tbody></table></div>
+      ${renderTemplatePager(d.pagination, 'loadMentors', 'changeMentorPageSize', 'mentorPageSize')}
+      <div class="hint" style="padding:10px 24px 16px">导师账号为工号，初始密码默认与工号相同；停用后导师无法登录、学生不可申请。</div>
+    </div>`;
+  updateSel('mentor');
+  loadInfoStatus();
+}
+
+function applyMentorFilters() {
+  mentorView.q = $('#mentorSearch')?.value.trim() || '';
+  mentorView.college = $('#mentorCollege')?.value || '';
+  mentorView.category = $('#mentorCategory')?.value || '';
+  mentorView.major = $('#mentorMajor')?.value || '';
+  mentorView.status = $('#mentorStatus')?.value || '';
+  selMentor.clear();
+  loadMentors(1);
+}
+
+function resetMentorFilters() {
+  mentorView.q = ''; mentorView.college = ''; mentorView.category = ''; mentorView.major = ''; mentorView.status = '';
+  selMentor.clear(); loadMentors(1);
+}
+
+function mentorPage(p) {
+  loadMentors(p);
+}
+
+function changeMentorPageSize() {
+  mentorView.pageSize = +$('#mentorPageSize').value;
+  localStorage.setItem('mentor-page-size', String(mentorView.pageSize));
+  selMentor.clear(); loadMentors(1);
+}
+
+function editMentor(id = null) {
+  const d = window._mentors || [];
+  const m = d.find(x => x.id === id) || {};
+  UI.openModal(`<div class="modal-head"><h3>${id ? '编辑导师' : '新增导师'}</h3><button class="modal-close" type="button" onclick="UI.closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-item"><label>工号（7位正式工号；临时账号可迁移为正式工号）</label><input type="text" id="m_user" value="${esc(m.username || '')}" ${id && /^\d{7}$/.test(m.username) ? 'disabled' : ''}></div>
+      <div class="form-item"><label>姓名</label><input type="text" id="m_name" value="${esc(m.name || '')}"></div>
+      <div class="form-item"><label>学院</label><select id="m_college"><option value="">请选择学院</option><option value="人工智能学院" ${m.college === '人工智能学院' ? 'selected' : ''}>人工智能学院</option><option value="电子与电气工程学院" ${m.college === '电子与电气工程学院' ? 'selected' : ''}>电子与电气工程学院</option></select></div>
+      <div class="form-item"><label>职称</label><input type="text" id="m_title" value="${esc(m.title || '')}"></div>
+      <div class="form-item"><label>招生类别</label><input type="text" id="m_category" value="${esc(m.admission_category || '')}" placeholder="如：学硕/专硕"></div>
+      <div class="form-item"><label>可招生专业（每行一个）</label><textarea id="m_majors" placeholder="计算机科学与技术&#10;计算机技术">${esc((m.allowed_majors || []).join('\n'))}</textarea></div>
+      <div class="form-item"><label>研究方向</label><input type="text" id="m_area" value="${esc(m.area || '')}"></div>
+      <div class="form-item"><label>简介（学生可见）</label><textarea id="m_intro">${esc(m.intro || '')}</textarea></div>
+      <div class="form-item"><label>招生名额</label><input type="number" id="m_quota" value="${m.quota || 3}" min="1"></div>
+      <div class="form-item"><label>${id ? '重置密码（留空不改）' : '初始密码（留空则与工号相同）'}</label><input type="text" id="m_pwd"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-default" type="button" onclick="UI.closeModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="saveMentor(this, ${id || 'null'})">保存</button>
+    </div>`);
+}
+
+async function saveMentor(btn, id) {
+  try {
+    const body = { id, username: $('#m_user').value.trim(), name: $('#m_name').value.trim(),
+      college: $('#m_college').value, title: $('#m_title').value.trim(),
+      admission_category: $('#m_category').value.trim(),
+      allowed_majors: $('#m_majors').value.split(/\n+/).map(x => x.trim()).filter(Boolean),
+      area: $('#m_area').value.trim(), intro: $('#m_intro').value.trim(),
+      quota: parseInt($('#m_quota').value) || 3, password: $('#m_pwd').value.trim() };
+    if (!body.name) return UI.toast('姓名必填', 'error');
+    await UI.withBusy(btn, () => UI.api('/api/admin/mentor', { method: 'POST', body: JSON.stringify(body) }));
+    UI.toast('保存成功'); UI.closeModal(); loadMentors(); loadOverview();
+  } catch (e) { UI.toast(e.message, 'error'); }
+}
+
+function showApplied1(id) {
+  const names = (window._overviewMentors || []).find(m => m.id === id)?.applied1_names || [];
+  UI.openModal(`<div class="modal-head"><h3>申报学生（${names.length} 人）</h3><button class="modal-close" type="button" onclick="UI.closeModal()">✕</button></div>
+    <div class="modal-body"><div style="line-height:2">${names.map((n, i) => `${i + 1}. <b>${esc(n)}</b>`).join('<br>') || '<span class="empty-inline">暂无</span>'}</div></div>
+    <div class="modal-foot"><button class="btn btn-default" type="button" onclick="UI.closeModal()">关闭</button></div>`);
+}
+
+async function toggleMentor(id) {
+  const m = (window._mentors || []).find(x => x.id === id);
+  const active = m && m.active;
+  if (active) {
+    const ok = await UI.confirm({
+      title: '停用导师账号',
+      message: `确认停用导师「${m.name}」？停用后导师无法登录，学生也不可再申请该导师。`,
+      okText: '确认停用', danger: true
+    });
+    if (!ok) return;
+  }
+  try { await UI.api('/api/admin/mentor/toggle', { method: 'POST', body: JSON.stringify({ id }) }); loadMentors(); loadOverview(); }
+  catch (e) { UI.toast(e.message, 'error'); }
+}
+
+/* 导师信息总表上传 */
+async function loadInfoStatus() {
+  try {
+    const st = await UI.api('/api/admin/mentor_info/status');
+    const kb = (st.size / 1024).toFixed(1);
+    $('#infoStatus').innerHTML = st.exists
+      ? `当前已上传：<b>${esc(st.filename)}</b>（${kb} KB，${esc(st.updated_at)}）— 学生端下载的就是这份文件`
+      : '当前：<b>未上传</b> — 学生端下载空白占位表（可先点「下载测试」验证下载链路）';
+  } catch (e) { $('#infoStatus').textContent = '状态加载失败'; }
+}
+
+async function uploadInfo(btn) {
+  const f = document.getElementById('infoFile').files[0];
+  if (!f) return UI.toast('请先选择文件', 'error');
+  if (!/\.(xlsx|xls|csv)$/i.test(f.name)) return UI.toast('仅支持 .xlsx / .xls / .csv 格式', 'error');
+  try {
+    const fd = new FormData();
+    fd.append('file', f);
+    await UI.withBusy(btn, async () => {
+      const r = await fetch('/api/admin/mentor_info', { method: 'POST', headers: { 'X-CSRF-Token': UI.csrf }, body: fd });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || '上传失败');
+    });
+    UI.toast('导师信息表已上传，学生端可下载');
+    loadInfoStatus();
+  } catch (e) { UI.toast(e.message, 'error'); }
+}
+
+async function delInfo() {
+  const ok = await UI.confirm({
+    title: '删除导师信息表',
+    message: '确定删除已上传的导师信息表？学生端将恢复为空白占位表。',
+    okText: '确认删除', danger: true
+  });
+  if (!ok) return;
+  try { await UI.api('/api/admin/mentor_info/delete', { method: 'POST', body: '{}' }); UI.toast('已删除'); loadInfoStatus(); }
+  catch (e) { UI.toast(e.message, 'error'); }
+}
+
+
+// ---------- 学生管理 ----------
+const studentView = {
+  q: '', major: '', status: 'all', account: 'all', page: 1,
+  pageSize: Number(localStorage.getItem('student-page-size')) || 20
+};
+if (![10, 20, 50, 100].includes(studentView.pageSize)) studentView.pageSize = 20;
+
+function studentSummaryCard(key, label, value, desc, tone = '') {
+  const action = key === 'inactive'
+    ? "setStudentQuickFilter('all','inactive')"
+    : `setStudentQuickFilter('${key}','all')`;
+  const toneClass = tone ? `tone-${tone}` : '';
+  return `<button class="match-summary-card student-summary-card" type="button" onclick="${action}">
+    <span>${label}</span>
+    <strong class="${toneClass}">${value}</strong>
+    <small>${desc}</small>
+  </button>`;
+}
+function studentFilterSummary() {
+  const parts = [];
+  const statusLabels = { matched: '已配对', pending: '待导师审核', unselected: '尚未申请' };
+  if (studentView.q) parts.push(`关键词“${studentView.q}”`);
+  if (studentView.major) parts.push(studentView.major);
+  if (studentView.status !== 'all') parts.push(statusLabels[studentView.status]);
+  if (studentView.account === 'active') parts.push('账号启用');
+  if (studentView.account === 'inactive') parts.push('账号停用');
+  return parts.length ? `筛选：${parts.join(' · ')}` : '当前显示全部学生';
+}
+
+function renderStudentSelection(s) {
+  if (s.match) {
+    return `<div class="student-selection-state is-matched">
+      <span class="student-state-badge">已配对</span>
+      <div class="student-selection-main"><b>${esc(s.match)}</b><span>${s.match_username ? '导师账号 ' + esc(s.match_username) : '配对关系已锁定'}</span></div>
+    </div>`;
+  }
+  const pref = (s.round_info || [])[0];
+  if (pref) {
+    return `<div class="student-selection-state is-pending">
+      <span class="student-state-badge">待审核</span>
+      <div class="student-selection-main"><b>${esc(pref.mentor)}</b><span>${esc(pref.mentor_username || '')}${pref.created_at ? ' · ' + esc(pref.created_at) : ''}</span></div>
+    </div>`;
+  }
+  return `<div class="student-selection-state is-unselected">
+    <span class="student-state-badge">尚未申请</span>
+    <div class="student-selection-main"><b>暂无有效申请</b><span>学生尚未提交或已撤回申请</span></div>
+  </div>`;
+}
+
+async function loadStudents(page = studentView.page) {
+  studentView.page = page;
+  const qs = new URLSearchParams({
+    q: studentView.q, major: studentView.major, status: studentView.status,
+    account: studentView.account, page: studentView.page, page_size: studentView.pageSize
+  });
+  const d = await UI.api('/api/admin/students?' + qs.toString());
+  studentView.page = d.pagination.page;
+  window._students = d.students;
+  const summary = d.summary || {};
+  const rows = d.students.map(s => {
+    const state = s.selection_status || (s.match ? 'matched' : ((s.round_info || []).length ? 'pending' : 'unselected'));
+    return `<tr class="student-data-row state-${state}">
+      <td><input type="checkbox" class="row-cb" data-kind="student" data-id="${s.id}" ${selStudent.has(s.id) ? 'checked' : ''} onchange="updateSel('student')" aria-label="选择 ${esc(s.name)}"></td>
+      <td><span class="cell-main">${esc(s.name)}</span><div class="cell-sub mono">${esc(s.username)}</div></td>
+      <td><span class="cell-main">${esc(s.major) || '未填写专业'}</span><div class="cell-sub">${esc(s.phone) || '未填写手机号'}</div></td>
+      <td>${renderStudentSelection(s)}</td>
+      <td><span class="account-pill ${s.active ? 'is-active' : 'is-disabled'}"><i></i>${s.active ? '启用' : '停用'}</span></td>
+      <td><button class="btn btn-default btn-sm" type="button" onclick="editStudent(${s.id})">查看 / 编辑</button></td>
+    </tr>`;
+  }).join('');
+
+  $('#students').innerHTML = `
+    <div class="match-summary-grid student-summary-grid">
+      ${studentSummaryCard('all', '全部学生', summary.total || 0, `启用 ${summary.active || 0} 个账号`)}
+      ${studentSummaryCard('matched', '已配对学生', summary.matched || 0, '查看已完成配对的学生', 'success')}
+      ${studentSummaryCard('pending', '待审核申请', summary.pending || 0, '查看等待导师处理的申请', 'warning')}
+      ${studentSummaryCard('unselected', '未申请学生', summary.unselected || 0, '当前没有有效导师申请', 'warning')}
+      ${studentSummaryCard('inactive', '停用账号', summary.inactive || 0, '当前无法登录系统', summary.inactive ? 'error' : '')}
+    </div>
+
+    <div class="card table-card match-management-card student-management-card">
+      <div class="card-head match-card-head">
+        <div>
+          <div class="ch-title">学生信息概览</div>
+          <div class="ch-desc">查看学生账号、专业、联系方式及实时互选状态</div>
+        </div>
+        <div class="ch-actions">
+          <button class="btn btn-primary" type="button" onclick="editStudent()">＋ 新增学生</button>
+          <button class="btn btn-default" type="button" onclick="showImport('student')">批量导入</button>
+        </div>
+      </div>
+
+      <div class="management-template-toolbar match-template-toolbar student-template-toolbar">
+        <div class="management-filter-controls match-filter-controls">
+          <div class="visitor-searchbox match-searchbox">
+            <input type="search" id="studentSearch" aria-label="搜索姓名、学号或手机号" value="${esc(studentView.q)}" placeholder="搜索学生姓名、学号或手机号" onkeydown="if(event.key==='Enter'){event.preventDefault();applyStudentFilters()}">
+            <button type="button" aria-label="搜索并应用筛选" onclick="applyStudentFilters()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 20-5.6-5.6a7 7 0 1 0-1.4 1.4L19.6 21 21 20ZM5 10.5a5.5 5.5 0 1 1 11 0 5.5 5.5 0 0 1-11 0Z"/></svg></button>
+          </div>
+          <select id="studentMajor" aria-label="按专业筛选"><option value="">全部专业</option>${d.majors.map(m => `<option value="${esc(m)}" ${m === studentView.major ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>
+          <select id="studentStatus" aria-label="按互选状态筛选"><option value="all" ${studentView.status === 'all' ? 'selected' : ''}>全部互选状态</option><option value="matched" ${studentView.status === 'matched' ? 'selected' : ''}>已配对</option><option value="pending" ${studentView.status === 'pending' ? 'selected' : ''}>待导师审核</option><option value="unselected" ${studentView.status === 'unselected' ? 'selected' : ''}>未申请</option></select>
+          <select id="studentAccount" aria-label="按账号状态筛选"><option value="all" ${studentView.account === 'all' ? 'selected' : ''}>全部账号状态</option><option value="active" ${studentView.account === 'active' ? 'selected' : ''}>账号启用</option><option value="inactive" ${studentView.account === 'inactive' ? 'selected' : ''}>账号停用</option></select>
+          <button class="btn btn-default" type="button" onclick="resetStudentFilters()">重置</button>
+        </div>
+        <div class="batch-bar" id="sBatchBar" style="display:${selStudent.size ? 'flex' : 'none'}">
+          <span class="tag tag-blue" id="sSelCount">已选 ${selStudent.size} 项</span>
+          <button class="btn btn-primary btn-sm" type="button" onclick="batchResetPwd('student')">重置密码</button>
+          <button class="btn btn-default btn-sm" type="button" onclick="batchEdit('student')">批量编辑</button>
+          <button class="btn btn-danger-outline btn-sm" type="button" onclick="batchDelete('student')">批量删除</button>
+          <button class="btn btn-text btn-sm" type="button" onclick="clearSel('student')">取消选择</button>
+        </div>
+      </div>
+
+      <div class="table-wrap has-hint match-table-wrap student-table-wrap"><table class="student-table">
+        <colgroup><col class="col-check"><col class="col-student"><col class="col-contact"><col class="col-progress"><col class="col-account"><col class="col-actions"></colgroup>
+        <thead><tr>
+          <th><input type="checkbox" id="sAll" onclick="toggleAll('student', this)" title="全选"></th>
+          <th>学生</th><th>专业与联系方式</th><th>互选进度</th><th>账号状态</th><th>操作</th>
+        </tr></thead><tbody>
+          ${rows || `<tr><td colspan="6"><div class="student-empty-state"><span>没有找到符合条件的学生</span><button class="btn btn-default btn-sm" type="button" onclick="resetStudentFilters()">清除筛选</button></div></td></tr>`}
+        </tbody></table></div>
+      ${renderTemplatePager(d.pagination, 'loadStudents', 'changeStudentPageSize', 'studentPageSize')}
+    </div>`;
+  updateSel('student');
+}
+function setStudentQuickFilter(status, account) {
+  studentView.q = '';
+  studentView.major = '';
+  studentView.status = status;
+  studentView.account = account;
+  selStudent.clear();
+  loadStudents(1);
+}
+
+function applyStudentFilters() {
+  studentView.q = $('#studentSearch')?.value.trim() || '';
+  studentView.major = $('#studentMajor')?.value || '';
+  studentView.status = $('#studentStatus')?.value || 'all';
+  studentView.account = $('#studentAccount')?.value || 'all';
+  selStudent.clear();
+  loadStudents(1);
+}
+
+function changeStudentPageSize() {
+  studentView.pageSize = +$('#studentPageSize').value;
+  localStorage.setItem('student-page-size', String(studentView.pageSize));
+  selStudent.clear();
+  loadStudents(1);
+}
+
+function resetStudentFilters() {
+  studentView.q = '';
+  studentView.major = '';
+  studentView.status = 'all';
+  studentView.account = 'all';
+  selStudent.clear();
+  loadStudents(1);
+}
+
+function renderPager(kind, p) {
+  if (p.total_pages <= 1) return '';
+  const fn = kind === 'student' ? 'loadStudents' : 'loadLogs';
+  return `<div class="pager"><span class="pager-total">共 ${p.total} 条</span>
+    <button class="btn btn-default btn-sm" type="button" onclick="${fn}(${p.page - 1})" ${p.page <= 1 ? 'disabled' : ''}>上一页</button>
+    <span class="pager-now">${p.page} / ${p.total_pages}</span>
+    <button class="btn btn-default btn-sm" type="button" onclick="${fn}(${p.page + 1})" ${p.page >= p.total_pages ? 'disabled' : ''}>下一页</button></div>`;
+}
+
+function editStudent(id = null) {
+  const d = window._students || [];
+  const s = d.find(x => x.id === id) || {};
+  const accountAction = id ? `<div class="student-modal-account-actions">
+        <button class="btn btn-default" type="button" onclick="resetPwd('student', ${id})">重置密码</button>
+        <button class="btn ${s.active ? 'btn-danger-outline' : 'btn-default'}" type="button" onclick="toggleStudent(${id})">${s.active ? '停用账号' : '启用账号'}</button>
+        <button class="btn btn-text btn-danger-text" type="button" onclick="delStudent(${id})">删除学生</button>
+      </div>` : '';
+  UI.openModal(`<div class="modal-head"><div><h3>${id ? '学生详情与编辑' : '新增学生'}</h3>${id ? `<div class="modal-head-desc">账号 ${esc(s.username || '')} · ${s.active ? '当前已启用' : '当前已停用'}</div>` : ''}</div><button class="modal-close" type="button" onclick="UI.closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-item"><label>学号（登录账号）</label><input type="text" id="s_user" value="${esc(s.username || '')}" ${id ? 'disabled' : ''}></div>
+      <div class="form-item"><label>姓名</label><input type="text" id="s_name" value="${esc(s.name || '')}"></div>
+      <div class="form-item"><label>专业</label><input type="text" id="s_major" value="${esc(s.major || '')}"></div>
+      <div class="form-item"><label>手机号</label><input type="text" id="s_phone" value="${esc(s.phone || '')}"></div>
+      <div class="form-item"><label>备注</label><input type="text" id="s_remark" value="${esc(s.remark || '')}"></div>
+      ${id ? '' : '<div class="form-item"><label>初始密码（建议按名单设置；留空则与学号相同）</label><input type="text" id="s_pwd"></div>'}
+    </div>
+    <div class="modal-foot student-modal-foot">
+      ${accountAction}
+      <div class="student-modal-save-actions">
+        <button class="btn btn-default" type="button" onclick="UI.closeModal()">取消</button>
+        <button class="btn btn-primary" type="button" onclick="saveStudent(this, ${id || 'null'})">保存</button>
+      </div>
+    </div>`);
+}
+async function saveStudent(btn, id) {
+  try {
+    const body = { id, username: $('#s_user').value.trim(), name: $('#s_name').value.trim(),
+      major: $('#s_major').value.trim(), phone: $('#s_phone').value.trim(), remark: $('#s_remark').value.trim(),
+      password: $('#s_pwd')?.value.trim() || '' };
+    if (!body.name) return UI.toast('姓名必填', 'error');
+    await UI.withBusy(btn, () => UI.api('/api/admin/student', { method: 'POST', body: JSON.stringify(body) }));
+    UI.toast('保存成功'); UI.closeModal(); loadStudents(); loadOverview();
+  } catch (e) { UI.toast(e.message, 'error'); }
+}
+
+async function toggleStudent(id) {
+  const s = (window._students || []).find(x => x.id === id);
+  const active = s && s.active;
+  if (active) {
+    const ok = await UI.confirm({
+      title: '停用学生账号',
+      message: `确认停用学生「${s.name}」？停用后学生无法登录，且不能再提交或处理申请。`,
+      okText: '确认停用', danger: true
+    });
+    if (!ok) return;
+  }
+  try {
+    await UI.api('/api/admin/student/toggle', { method: 'POST', body: JSON.stringify({ id }) });
+    UI.toast(active ? '学生账号已停用' : '学生账号已启用');
+    UI.closeModal();
+    loadStudents();
+  }
+  catch (e) { UI.toast(e.message, 'error'); }
+}
+
+/* ---------- 批量操作（复选框） ---------- */
+const selMentor = new Set(), selStudent = new Set();
+const SEL = { mentor: selMentor, student: selStudent };
+const BAR = { mentor: 'mBatchBar', student: 'sBatchBar' };
+const CNT = { mentor: 'mSelCount', student: 'sSelCount' };
+
+function updateSel(kind) {
+  const set = SEL[kind];
+  set.clear();
+  document.querySelectorAll(`.row-cb[data-kind="${kind}"]:checked`).forEach(c => set.add(+c.dataset.id));
+  const bar = document.getElementById(BAR[kind]);
+  if (bar) {
+    bar.style.display = set.size ? 'flex' : 'none';
+    document.getElementById(CNT[kind]).textContent = `已选 ${set.size} 项`;
+    const all = document.getElementById(kind === 'mentor' ? 'mAll' : 'sAll');
+    if (all) all.checked = document.querySelectorAll(`.row-cb[data-kind="${kind}"]`).length === set.size;
+  }
+}
+
+function toggleAll(kind, cb) {
+  document.querySelectorAll(`.row-cb[data-kind="${kind}"]`).forEach(c => c.checked = cb.checked);
+  updateSel(kind);
+}
+
+function clearSel(kind) {
+  document.querySelectorAll(`.row-cb[data-kind="${kind}"]`).forEach(c => c.checked = false);
+  updateSel(kind);
+}
+
+function getSelIds(kind) { return [...SEL[kind]]; }
+
+function batchResetPwd(kind) {
+  const n = getSelIds(kind).length;
+  UI.openModal(`<div class="modal-head"><h3>批量重置密码</h3><button class="modal-close" type="button" onclick="UI.closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="tip-block" style="margin-bottom:12px">将为选中的 <b>${n}</b> 个${kind === 'student' ? '学生' : '导师'}设置同一新密码</div>
+      <div class="form-item"><label>新密码（至少6位）</label><input type="text" id="brpwd"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-default" type="button" onclick="UI.closeModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="doBatchResetPwd(this, '${kind}')">确认重置</button>
+    </div>`);
+}
+
+async function doBatchResetPwd(btn, kind) {
+  const pwd = $('#brpwd').value.trim();
+  if (pwd.length < 6) return UI.toast('新密码至少6位', 'error');
+  try {
+    const r = await UI.withBusy(btn, () => UI.api('/api/admin/reset_password_batch', { method: 'POST', body: JSON.stringify({ kind, ids: getSelIds(kind), password: pwd }) }));
+    UI.toast(`已重置 ${r.count} 个账号密码`);
+    UI.closeModal(); clearSel(kind);
+  } catch (e) { UI.toast(e.message, 'error'); }
+}
+
+function batchEdit(kind) {
+  const n = getSelIds(kind).length;
+  const fields = kind === 'mentor'
+    ? `<option value="quota">招生名额</option>`
+    : `<option value="major">专业</option>`;
+  UI.openModal(`<div class="modal-head"><h3>批量编辑</h3><button class="modal-close" type="button" onclick="UI.closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="tip-block" style="margin-bottom:12px">为选中的 <b>${n}</b> 个${kind === 'student' ? '学生' : '导师'}统一设置</div>
+      <div class="form-item"><label>字段</label><select id="bef">${fields}</select></div>
+      <div class="form-item"><label>值</label><input type="text" id="bev" placeholder="${kind === 'mentor' ? '如：5' : '如：人工智能 / 接受'}"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-default" type="button" onclick="UI.closeModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="doBatchEdit(this, '${kind}')">确认修改</button>
+    </div>`);
+}
+
+async function doBatchEdit(btn, kind) {
+  const field = $('#bef').value;
+  let value = $('#bev').value.trim();
+  if (field === 'accept_adjust') value = (value === '接受' || value === '1') ? 1 : 0;
+  try {
+    const r = await UI.withBusy(btn, () => UI.api('/api/admin/batch_edit', { method: 'POST', body: JSON.stringify({ kind, ids: getSelIds(kind), field, value }) }));
+    UI.toast(`已修改 ${r.count} 项`);
+    UI.closeModal(); clearSel(kind);
+    loadMentors(); loadStudents(); loadOverview();
+  } catch (e) { UI.toast(e.message, 'error'); }
+}
+
+async function batchDelete(kind) {
+  const n = getSelIds(kind).length;
+  const msg = kind === 'student'
+    ? `确定删除选中的 ${n} 个学生？\n将连带删除其全部志愿与匹配记录！`
+    : `确定删除选中的 ${n} 个导师？\n（存在志愿/匹配记录的导师会自动跳过）`;
+  const ok = await UI.confirm({ title: '批量删除', message: msg, okText: '确认删除', danger: true });
+  if (!ok) return;
+  try {
+    const url = kind === 'student' ? '/api/admin/student/delete_batch' : '/api/admin/mentor/delete_batch';
+    const r = await UI.api(url, { method: 'POST', body: JSON.stringify({ ids: getSelIds(kind) }) });
+    if (r.skipped && r.skipped.length) UI.toast(`删除 ${r.deleted} 个，跳过 ${r.skipped.length} 个：${r.skipped.join('；')}`, 'error');
+    else UI.toast(`已删除 ${r.deleted} 个`);
+    clearSel(kind);
+    loadMentors(); loadStudents(); loadOverview();
+  } catch (e) { UI.toast(e.message, 'error'); }
+}
+
+/* 重置密码 */
+function resetPwd(kind, id) {
+  const list = kind === 'student' ? (window._students || []) : (window._mentors || []);
+  const name = list.find(x => x.id === id)?.name || '';
+  UI.openModal(`<div class="modal-head"><h3>重置密码</h3><button class="modal-close" type="button" onclick="UI.closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="tip-block" style="margin-bottom:12px">用户：<b>${esc(name)}</b>（${kind === 'student' ? '学生' : '导师'}）</div>
+      <div class="form-item"><label>新密码（至少6位）</label><input type="text" id="rpwd"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-default" type="button" onclick="UI.closeModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="doResetPwd(this, '${kind}', ${id})">确认重置</button>
+    </div>`);
+}
+
+async function doResetPwd(btn, kind, id) {
+  const pwd = $('#rpwd').value.trim();
+  if (pwd.length < 6) return UI.toast('新密码至少6位', 'error');
+  try {
+    await UI.withBusy(btn, () => UI.api('/api/admin/reset_password', { method: 'POST', body: JSON.stringify({ kind, id, password: pwd }) }));
+    UI.toast('密码已重置');
+    UI.closeModal();
+  } catch (e) { UI.toast(e.message, 'error'); }
+}
+
+async function delMentor(id) {
+  const name = (window._mentors || []).find(x => x.id === id)?.name || '';
+  const ok = await UI.confirm({
+    title: '删除导师',
+    message: `确定删除导师「${name}」？\n（存在志愿/匹配记录时将无法删除）`,
+    okText: '确认删除', danger: true
+  });
+  if (!ok) return;
+  try { await UI.api('/api/admin/mentor/delete', { method: 'POST', body: JSON.stringify({ id }) }); UI.toast('已删除'); loadMentors(); loadOverview(); }
+  catch (e) { UI.toast(e.message, 'error'); }
+}
+
+async function delStudent(id) {
+  const name = (window._students || []).find(x => x.id === id)?.name || '';
+  const ok = await UI.confirm({
+    title: '删除学生',
+    message: `确定删除学生「${name}」？\n将连带删除其全部志愿与匹配记录！`,
+    okText: '确认删除', danger: true
+  });
+  if (!ok) return;
+  try {
+    await UI.api('/api/admin/student/delete', { method: 'POST', body: JSON.stringify({ id }) });
+    UI.toast('已删除');
+    UI.closeModal();
+    loadStudents();
+    loadOverview();
+  }
+  catch (e) { UI.toast(e.message, 'error'); }
+}
+
+function showImport(kind) {
+  const k = kind || 'student';
+  UI.openModal(`<div class="modal-head"><h3>批量导入（CSV 格式）</h3><button class="modal-close" type="button" onclick="UI.closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-item"><label>选择类型</label>
+        <select id="imp_kind"><option value="student" ${k === 'student' ? 'selected' : ''}>学生导入</option><option value="mentor" ${k === 'mentor' ? 'selected' : ''}>导师导入</option></select></div>
+      <div class="form-item"><label>粘贴 CSV 内容（第一行可以是表头）</label>
+        <textarea id="imp_text" rows="6" placeholder="账号,姓名,专业,手机号,密码&#10;13800000001,张三,计算机技术,13800000001,13800000001"></textarea></div>
+      <div class="form-item"><label>格式说明</label>
+        <div class="tip-block">学生：账号,姓名,专业,手机号,密码(可空)　|　导师：工号,姓名,职称,招生类别,可招生专业,研究方向,简介,名额,密码(可空)<br>
+        已存在的账号/工号会自动更新资料，密码列留空则保持原密码。</div></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-default" type="button" onclick="UI.closeModal()">取消</button>
+      <button class="btn btn-primary" type="button" onclick="doImport(this)">导入</button>
+    </div>`);
+}
+
+async function doImport(btn) {
+  try {
+    const r = await UI.withBusy(btn, () => UI.api('/api/admin/import', { method: 'POST', body: JSON.stringify({ kind: $('#imp_kind').value, text: $('#imp_text').value }) }));
+    UI.toast(`导入成功：新增 ${r.added} 人，更新 ${r.updated} 人`);
+    UI.closeModal(); loadStudents(); loadMentors(); loadOverview();
+  } catch (e) { UI.toast(e.message, 'error'); }
+}
+
+/* ---------- 匹配管理 ---------- */
+let matchView = 'mentor';
+const matchState = { q: '', college: '', quotaStatus: '', xueshuStatus: '', pendingStatus: '',
+  studentStatus: '', degree: '', major: '', page: 1, pageSize: 20 };
+let matchMentors = [];
+
+function matchApiUrl(page = matchState.page) {
+  return '/api/admin/matches?' + new URLSearchParams({
+    view: matchView, q: matchState.q, page, page_size: matchState.pageSize,
+    college: matchState.college, quota_status: matchState.quotaStatus,
+    xueshu_status: matchState.xueshuStatus, pending_status: matchState.pendingStatus,
+    student_status: matchState.studentStatus, degree: matchState.degree, major: matchState.major
+  });
+}
+
+async function loadMatches(page = matchState.page) {
+  matchState.page = Math.max(1, page || 1);
+  const d = await UI.api(matchApiUrl());
+  info = d.info;
+  matchMentors = d.mentors || [];
+  matchState.page = d.pagination.page;
+  $('#matches').innerHTML = `${matchSummaryCards(d.summary)}
+    <div class="card table-card match-management-card">
+      <div class="card-head match-card-head">
+        <div>
+          <div class="ch-title">${matchView === 'mentor' ? '导师配对概览' : '学生配对明细'}</div>
+          <div class="ch-desc">${matchView === 'mentor'
+            ? '按导师查看总名额、学硕上限、待审核申请与已录学生'
+            : '查询学生当前配对状态，并由管理员指定、改配或解除配对'}</div>
+        </div>
+        <div class="match-view-switch" role="group" aria-label="匹配管理视角">
+          <button class="${matchView === 'mentor' ? 'active' : ''}" type="button" onclick="setMatchView('mentor')">导师视角</button>
+          <button class="${matchView === 'student' ? 'active' : ''}" type="button" onclick="setMatchView('student')">学生视角</button>
+        </div>
+      </div>
+      ${matchToolbar(d)}
+      ${matchView === 'mentor' ? matchMentorTable(d) : matchStudentTable(d)}
+      ${renderTemplatePager(d.pagination, 'loadMatches', 'changeMatchPageSize', 'matchPageSize')}
+    </div>`;
+}
+
+function matchSummaryCards(s) {
+  return `<div class="match-summary-grid">
+    <button type="button" class="match-summary-card" onclick="applyMatchSummary('paired')"><span>已配对学生</span><strong>${s.paired}</strong><small>查看配对明细</small></button>
+    <button type="button" class="match-summary-card" onclick="applyMatchSummary('unmatched')"><span>未配对学生</span><strong class="${s.unmatched ? 'tone-warning' : 'tone-success'}">${s.unmatched}</strong><small>可由管理员安排</small></button>
+    <button type="button" class="match-summary-card" onclick="applyMatchSummary('pending')"><span>待审核申请</span><strong class="tone-warning">${s.pending}</strong><small>查看涉及导师</small></button>
+    <button type="button" class="match-summary-card" onclick="applyMatchSummary('full')"><span>总名额已满导师</span><strong>${s.full_mentors}</strong><small>按名额状态筛选</small></button>
+    <button type="button" class="match-summary-card" onclick="applyMatchSummary('xueshu')"><span>学硕达到上限</span><strong class="${s.xueshu_exceeded ? 'tone-error' : ''}">${s.xueshu_at_limit}</strong><small>${s.xueshu_exceeded ? `${s.xueshu_exceeded} 位历史超额` : '每位最多 3 名'}</small></button>
+  </div>`;
+}
+
+function matchToolbar(d) {
+  const common = `<div class="visitor-searchbox match-searchbox">
+    <input type="search" id="matchSearch" value="${esc(matchState.q)}" placeholder="${matchView === 'mentor' ? '搜索导师姓名、账号或学生' : '搜索学生、学号或导师'}" onkeydown="if(event.key==='Enter'){event.preventDefault();applyMatchFilters()}">
+    <button type="button" aria-label="搜索并应用筛选" title="搜索并应用筛选" onclick="applyMatchFilters()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 20-5.6-5.6a7 7 0 1 0-1.4 1.4L19.6 21 21 20ZM5 10.5a5.5 5.5 0 1 1 11 0 5.5 5.5 0 0 1-11 0Z"/></svg></button>
+  </div>`;
+  const mentorFilters = `<select id="matchCollege"><option value="">全部学院</option>${d.colleges.map(v => `<option value="${esc(v)}" ${v === matchState.college ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>
+    <select id="matchQuotaStatus"><option value="">全部名额状态</option><option value="available" ${matchState.quotaStatus === 'available' ? 'selected' : ''}>总名额有剩余</option><option value="full" ${matchState.quotaStatus === 'full' ? 'selected' : ''}>总名额已满</option></select>
+    <select id="matchXueshuStatus"><option value="">全部学硕状态</option><option value="below" ${matchState.xueshuStatus === 'below' ? 'selected' : ''}>未达3人</option><option value="reached" ${matchState.xueshuStatus === 'reached' ? 'selected' : ''}>已达3人</option><option value="exceeded" ${matchState.xueshuStatus === 'exceeded' ? 'selected' : ''}>历史超额</option></select>
+    <select id="matchPendingStatus"><option value="">全部审核状态</option><option value="has_pending" ${matchState.pendingStatus === 'has_pending' ? 'selected' : ''}>有待审核</option><option value="none" ${matchState.pendingStatus === 'none' ? 'selected' : ''}>无待审核</option></select>`;
+  const studentFilters = `<select id="matchStudentStatus"><option value="">全部配对状态</option><option value="matched" ${matchState.studentStatus === 'matched' ? 'selected' : ''}>已配对</option><option value="unmatched" ${matchState.studentStatus === 'unmatched' ? 'selected' : ''}>未配对</option></select>
+    <select id="matchDegree"><option value="">全部学位类别</option><option value="学硕" ${matchState.degree === '学硕' ? 'selected' : ''}>学硕</option><option value="专硕" ${matchState.degree === '专硕' ? 'selected' : ''}>专硕</option></select>
+    <select id="matchMajor"><option value="">全部专业</option>${d.majors.map(v => `<option value="${esc(v)}" ${v === matchState.major ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
+  return `<div class="management-template-toolbar match-template-toolbar"><div class="management-filter-controls match-filter-controls">${common}${matchView === 'mentor' ? mentorFilters : studentFilters}<button class="btn btn-default" type="button" onclick="resetMatchFilters()">重置</button></div></div>`;
+}
+
+function matchMentorTable(d) {
+  return `<div class="table-wrap has-hint match-table-wrap"><table class="match-mentor-table">
+    <thead><tr><th>导师</th><th>学院</th><th>总名额</th><th>学硕录取</th><th>专硕录取</th><th>待审核</th><th>当前状态</th><th>操作</th></tr></thead>
+    <tbody>${d.mentor_rows.map(m => {
+      const quotaPct = Math.min(100, Math.round((m.taken / Math.max(1, m.quota)) * 100));
+      const xueshuClass = m.xueshu_matched > 3 ? 'tag-red' : m.xueshu_matched === 3 ? 'tag-orange' : 'tag-blue';
+      const statuses = [];
+      if (!m.active) statuses.push('<span class="tag tag-gray">账号停用</span>');
+      if (m.xueshu_matched > 3) statuses.push('<span class="tag tag-red">学硕历史超额</span>');
+      else if (m.xueshu_matched === 3) statuses.push('<span class="tag tag-orange">学硕已满</span>');
+      if (m.remaining <= 0) statuses.push('<span class="tag tag-gray">总名额已满</span>');
+      if (!statuses.length) statuses.push('<span class="tag tag-green">可继续录取</span>');
+      return `<tr>
+        <td><span class="cell-main">${esc(m.name)}</span><div class="cell-sub mono">${esc(m.username)}${m.title ? ` · ${esc(m.title)}` : ''}</div></td>
+        <td>${esc(m.college || '—')}</td>
+        <td><div class="match-quota-value"><b>${m.taken}</b> / ${m.quota}<span>剩 ${m.remaining}</span></div><div class="match-progress"><i style="width:${quotaPct}%"></i></div></td>
+        <td><span class="tag ${xueshuClass}">${m.xueshu_matched} / 3</span></td>
+        <td><span class="match-count">${m.zhuanshu_matched}</span></td>
+        <td>${m.pending ? `<button class="link-btn" type="button" onclick="openMentorMatchDetail(${m.id})">${m.pending} 人</button><div class="cell-sub">学硕 ${m.xueshu_pending} · 专硕 ${m.zhuanshu_pending}</div>` : '<span class="empty-inline">无</span>'}</td>
+        <td><div class="match-status-stack">${statuses.join('')}</div></td>
+        <td><button class="btn btn-default btn-sm" type="button" onclick="openMentorMatchDetail(${m.id})">查看详情</button></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="8" class="empty">暂无符合条件的导师</td></tr>'}</tbody>
+  </table></div>`;
+}
+
+function matchStudentTable(d) {
+  return `<div class="table-wrap has-hint match-table-wrap"><table>
+    <thead><tr><th>学生</th><th>专业 / 类别</th><th>当前导师</th><th>配对方式</th><th>配对时间</th><th>操作</th></tr></thead>
+    <tbody>${d.student_rows.map(s => `<tr>
+      <td><span class="cell-main">${esc(s.name)}</span><div class="cell-sub mono">${esc(s.username)}</div></td>
+      <td>${esc(s.major || '—')} ${s.degree_category ? `<span class="tag tag-blue">${esc(s.degree_category)}</span>` : ''}</td>
+      <td>${s.matched ? `<span class="cell-main">${esc(s.mentor_name)}</span><div class="cell-sub mono">${esc(s.mentor_username)}</div>` : '<span class="tag tag-gray">未配对</span>'}</td>
+      <td>${s.matched ? UI.sourceTag(s.source) : '<span class="empty-inline">—</span>'}</td>
+      <td>${esc(s.created_at || '—')}</td>
+      <td class="match-row-actions"><select id="match_student_${s.id}">${mentorOpts(d.mentors, s.mentor_id, s.degree_category)}</select>
+        <button class="btn ${s.matched ? 'btn-default' : 'btn-success'} btn-sm" type="button" onclick="setMatch(this, ${s.id}, 'match_student_${s.id}')">${s.matched ? '改配' : '指定'}</button>
+        ${s.matched ? `<button class="btn btn-danger-outline btn-sm" type="button" onclick="setMatch(this, ${s.id}, null)">解除</button>` : ''}</td>
+    </tr>`).join('') || '<tr><td colspan="6" class="empty">暂无符合条件的学生</td></tr>'}</tbody>
+  </table></div>`;
+}
+
+function mentorOpts(mentors, selected = null, degreeCategory = '') {
+  return '<option value="">请选择导师</option>' + mentors.map(m => {
+    const xueshuBlocked = info.xueshu_limit_enabled && degreeCategory === '学硕' && m.xueshu_remaining <= 0 && m.id !== selected;
+    const quotaBlocked = m.remaining <= 0 && m.id !== selected;
+    const disabled = xueshuBlocked || quotaBlocked;
+    const suffix = xueshuBlocked ? '学硕已满' : quotaBlocked ? '总名额已满' : `余 ${m.remaining}`;
+    return `<option value="${m.id}" ${m.id === selected ? 'selected' : ''} ${disabled ? 'disabled' : ''}>${esc(m.name)}（${suffix}）</option>`;
+  }).join('');
+}
+
+function setMatchView(view) {
+  matchView = view;
+  matchState.page = 1;
+  loadMatches(1);
+}
+
+function applyMatchFilters() {
+  matchState.q = ($('#matchSearch')?.value || '').trim();
+  if (matchView === 'mentor') {
+    matchState.college = $('#matchCollege')?.value || '';
+    matchState.quotaStatus = $('#matchQuotaStatus')?.value || '';
+    matchState.xueshuStatus = $('#matchXueshuStatus')?.value || '';
+    matchState.pendingStatus = $('#matchPendingStatus')?.value || '';
+  } else {
+    matchState.studentStatus = $('#matchStudentStatus')?.value || '';
+    matchState.degree = $('#matchDegree')?.value || '';
+    matchState.major = $('#matchMajor')?.value || '';
+  }
+  loadMatches(1);
+}
+
+function resetMatchFilters() {
+  Object.assign(matchState, { q: '', college: '', quotaStatus: '', xueshuStatus: '', pendingStatus: '',
+    studentStatus: '', degree: '', major: '', page: 1 });
+  loadMatches(1);
+}
+
+function changeMatchPageSize() {
+  matchState.pageSize = parseInt($('#matchPageSize').value, 10) || 20;
+  loadMatches(1);
+}
+
+function applyMatchSummary(type) {
+  resetMatchFiltersState();
+  if (type === 'paired' || type === 'unmatched') {
+    matchView = 'student';
+    matchState.studentStatus = type === 'paired' ? 'matched' : 'unmatched';
+  } else {
+    matchView = 'mentor';
+    if (type === 'pending') matchState.pendingStatus = 'has_pending';
+    if (type === 'full') matchState.quotaStatus = 'full';
+    if (type === 'xueshu') matchState.xueshuStatus = 'at_limit';
+  }
+  loadMatches(1);
+}
+
+function resetMatchFiltersState() {
+  Object.assign(matchState, { q: '', college: '', quotaStatus: '', xueshuStatus: '', pendingStatus: '',
+    studentStatus: '', degree: '', major: '', page: 1 });
+}
+
+async function openMentorMatchDetail(mentorId) {
+  try {
+    const d = await UI.api(`/api/admin/matches/mentor/${mentorId}`);
+    const m = d.mentor;
+    const acceptedRows = d.accepted.map(s => `<tr>
+      <td><span class="cell-main">${esc(s.student_name)}</span><div class="cell-sub mono">${esc(s.student_no)}</div></td>
+      <td>${esc(s.major || '—')} <span class="tag ${s.degree_category === '学硕' ? 'tag-blue' : 'tag-green'}">${esc(s.degree_category || '未识别')}</span></td>
+      <td>${UI.sourceTag(s.source)}</td><td>${esc(s.created_at || '—')}</td>
+      <td><button class="btn btn-danger-outline btn-xs" type="button" onclick="setMatch(this, ${s.student_id}, null)">解除</button></td></tr>`).join('') || '<tr><td colspan="5" class="empty">暂无已录取学生</td></tr>';
+    const pendingRows = d.pending.map(s => `<tr><td><span class="cell-main">${esc(s.student_name)}</span><div class="cell-sub mono">${esc(s.student_no)}</div></td>
+      <td>${esc(s.major || '—')} <span class="tag ${s.degree_category === '学硕' ? 'tag-blue' : 'tag-green'}">${esc(s.degree_category || '未识别')}</span></td>
+      <td>${esc(s.created_at || '—')}</td></tr>`).join('') || '<tr><td colspan="3" class="empty">暂无待审核申请</td></tr>';
+    UI.openDrawer({
+      title: `${m.name} · 配对详情`,
+      meta: `${m.username} · ${m.college || '未填写学院'}${m.title ? ' · ' + m.title : ''}`,
+      body: `<div class="match-detail-metrics">
+          <div><span>总名额</span><b>${m.taken} / ${m.quota}</b><small>剩余 ${m.remaining}</small></div>
+          <div><span>学硕录取</span><b class="${m.xueshu_matched > 3 ? 'tone-error' : ''}">${m.xueshu_matched} / 3</b><small>${m.xueshu_matched >= 3 ? '已达到上限' : `还可录取 ${3 - m.xueshu_matched} 名`}</small></div>
+          <div><span>专硕录取</span><b>${m.zhuanshu_matched}</b><small>计入总名额</small></div>
+          <div><span>待审核</span><b>${d.pending.length}</b><small>学生申请</small></div>
+        </div>
+        ${m.xueshu_matched > 3 ? '<div class="banner banner-paused"><span class="banner-dot"></span>该导师存在历史学硕超额，系统已阻止继续录取新的学硕学生。</div>' : ''}
+        <div class="match-detail-section"><h4>已配对学生 <span>${d.accepted.length} 人</span></h4><div class="table-wrap"><table><thead><tr><th>学生</th><th>专业 / 类别</th><th>方式</th><th>时间</th><th>操作</th></tr></thead><tbody>${acceptedRows}</tbody></table></div></div>
+        <div class="match-detail-section"><h4>待审核申请 <span>${d.pending.length} 人</span></h4><div class="table-wrap"><table><thead><tr><th>学生</th><th>专业 / 类别</th><th>申请时间</th></tr></thead><tbody>${pendingRows}</tbody></table></div></div>`
+    });
+  } catch (e) { UI.toast(e.message, 'error'); }
+}
+
+async function setMatch(btn, student_id, selId) {
+  try {
+    const mentor_id = selId ? parseInt($('#' + selId).value) : null;
+    if (!mentor_id && selId) return UI.toast('请选择导师', 'error');
+    if (!selId) {
+      const ok = await UI.confirm({
+        title: '解除配对',
+        message: '确认解除该学生当前配对？学生将恢复为可选择状态，名额同时释放。',
+        okText: '确认解除', danger: true
+      });
+      if (!ok) return;
+    } else {
+      const ok = await UI.confirm({
+        title: '调整配对',
+        message: '确认将该学生调整到所选导师？原配对将被解除，新配对立即生效。',
+        okText: '确认调整'
+      });
+      if (!ok) return;
+    }
+    await UI.withBusy(btn, () => UI.api('/api/admin/match', { method: 'POST', body: JSON.stringify({ student_id, mentor_id }) }));
+    UI.toast(mentor_id ? '已调整匹配' : '已清空匹配');
+    UI.closeDrawer();
+    loadMatches(); loadOverview();
+  } catch (e) { UI.toast(e.message, 'error'); }
+}
+
+/* ---------- 操作日志 ---------- */
+const logView = { q: '', action: '', status: '', page: 1 };
+let logSearchWasFocused = false;
+
+function formatLogDetail(raw) {
+  try {
+    const d = JSON.parse(raw || '{}');
+    const labels = { action_name: '流程', kind: '类型', id: '记录ID', ids: '记录ID', name: '姓名',
+      username: '账号', student_id: '学生ID', mentor_id: '导师ID', round: '轮次', field: '字段',
+      value: '值', filename: '文件', result_count: '处理数', result_added: '新增', result_updated: '更新',
+      result_deleted: '删除', error: '错误' };
+    return Object.entries(d).filter(([k]) => k !== 'action' && k !== 'confirm_reopen')
+      .map(([k, v]) => `<span class="log-detail-item"><b>${esc(labels[k] || k)}：</b>${esc(Array.isArray(v) ? v.join(', ') : v)}</span>`).join('') || '<span class="empty-inline">无附加信息</span>';
+  } catch (_) { return esc(raw || ''); }
+}
+
+async function loadLogs(page = logView.page) {
+  logView.page = page;
+  const qs = new URLSearchParams({ q: logView.q, action: logView.action, status: logView.status,
+    page: logView.page, page_size: 20 });
+  const d = await UI.api('/api/admin/audit_logs?' + qs.toString());
+  logView.page = d.pagination.page;
+  $('#logs').innerHTML = `
+    <div class="card table-card">
+      <div class="card-head">
+        <div>
+          <div class="ch-title">管理员操作日志</div>
+          <div class="ch-desc">共 ${d.pagination.total} 条 · 自动记录流程和数据修改，密码内容不会入库</div>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-box"><input type="text" id="logSearch" value="${esc(logView.q)}" placeholder="搜索操作人、详情或 IP"></div>
+        <select id="logAction" onchange="applyLogFilters()"><option value="">全部操作</option>${d.actions.map(a => `<option value="${esc(a)}" ${a === logView.action ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select>
+        <select id="logStatus" onchange="applyLogFilters()"><option value="">全部结果</option><option value="success" ${logView.status === 'success' ? 'selected' : ''}>成功</option><option value="failed" ${logView.status === 'failed' ? 'selected' : ''}>失败</option></select>
+        <button class="btn btn-default" type="button" onclick="resetLogFilters()">清除筛选</button>
+      </div>
+      <div class="table-wrap has-hint audit-table-wrap"><table>
+        <thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>结果</th><th>详情</th><th>来源 IP</th></tr></thead>
+        <tbody>${d.logs.map(l => `<tr>
+          <td class="log-time">${esc(l.created_at)}</td>
+          <td><span class="cell-main">${esc(l.operator_name)}</span><div class="cell-sub">${esc(l.username)}</div></td>
+          <td><span class="tag tag-blue">${esc(l.action)}</span></td>
+          <td>${l.status === 'success' ? '<span class="tag tag-green">成功</span>' : '<span class="tag tag-red">失败</span>'}</td>
+          <td><div class="log-detail">${formatLogDetail(l.detail)}</div></td>
+          <td class="log-ip">${esc(l.ip)}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">暂无操作日志</td></tr>'}
+        </tbody></table></div>
+      ${renderPager('logs', d.pagination)}
+    </div>`;
+  UI.bindSearch($('#logSearch'), { debounceMs: 350, onApply: applyLogFilters, onEnter: applyLogFilters });
+  if (logSearchWasFocused) {
+    const ls = $('#logSearch');
+    ls?.focus();
+    ls?.setSelectionRange(ls.value.length, ls.value.length);
+    logSearchWasFocused = false;
+  }
+}
+
+function applyLogFilters() {
+  logSearchWasFocused = document.activeElement && document.activeElement.id === 'logSearch';
+  logView.q = $('#logSearch')?.value.trim() || '';
+  logView.action = $('#logAction')?.value || '';
+  logView.status = $('#logStatus')?.value || '';
+  loadLogs(1);
+}
+
+function resetLogFilters() {
+  logView.q = ''; logView.action = ''; logView.status = ''; loadLogs(1);
+}
+
+/* ---------- 数据导出 ---------- */
+function loadExport() {
+  $('#export').innerHTML = `
+    <div class="export-grid">
+      <div class="export-card">
+        <div class="ec-name">最终互选名单</div>
+        <div class="ec-desc">当前实时配对结果：学生、学号、专业、配对导师及配对时间。用于公示或存档。</div>
+        <div class="ec-foot"><a class="btn btn-primary" href="/api/admin/export?type=final">导出最终互选名单</a></div>
+      </div>
+      <div class="export-card">
+        <div class="ec-name">申请处理明细</div>
+        <div class="ec-desc">全部申请历史：包含撤回、拒绝、满额退回、管理员调整等过程记录。</div>
+        <div class="ec-foot"><a class="btn btn-default" href="/api/admin/export?type=preferences">导出申请处理明细</a></div>
+      </div>
+      <div class="export-card">
+        <div class="ec-name">未匹配名单</div>
+        <div class="ec-desc">尚未配对学生：学号、姓名、专业与联系方式，便于后续跟进。</div>
+        <div class="ec-foot"><a class="btn btn-default" href="/api/admin/export?type=unmatched">导出未匹配名单</a></div>
+      </div>
+      <div class="export-card">
+        <div class="ec-name">导师名单</div>
+        <div class="ec-desc">全部导师：工号、姓名、职称、招生类别、名额、研究方向与联系方式。</div>
+        <div class="ec-foot"><a class="btn btn-default" href="/api/admin/export?type=mentors">导出导师名单</a></div>
+      </div>
+      <div class="export-card">
+        <div class="ec-name">学生名单</div>
+        <div class="ec-desc">全部学生：学号、姓名、专业、手机号及账号启用状态。</div>
+        <div class="ec-foot"><a class="btn btn-default" href="/api/admin/export?type=students">导出学生名单</a></div>
+      </div>
+      <div class="export-card export-card-wide">
+        <div class="ec-name">初始账号密码</div>
+        <div class="ec-desc">合并导出为一个 Excel 文件，学生、导师、管理员分别存放在独立工作表；也可按身份单独导出 CSV。</div>
+        <div class="ec-foot export-account-actions">
+          <a class="btn btn-primary" href="/api/admin/export?type=accounts_all">合并导出 Excel</a>
+          <a class="btn btn-default" href="/api/admin/export?type=accounts&role=student">导出学生账号</a>
+          <a class="btn btn-default" href="/api/admin/export?type=accounts&role=mentor">导出导师账号</a>
+          <a class="btn btn-default" href="/api/admin/export?type=accounts&role=admin">导出管理员账号</a>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ---------- 初始化 ---------- */
+async function init() {
+  const d = await UI.api('/api/admin/overview');
+  info = d.info;
+  window._mentors = [];
+  window._students = [];
+  if (localStorage.getItem('admin-sider-collapsed') === '1' &&
+      !window.matchMedia('(max-width: 900px)').matches) {
+    $('#adminShell').classList.add('sider-collapsed');
+  }
+  const requested = location.hash.replace('#', '');
+  tab(ADMIN_PAGES[requested] ? requested : 'dashboard');
+}
+
+window.tab = tab; window.togglePhase = togglePhase; window.togglePasswordPolicy = togglePasswordPolicy;
+window.toggleXueshuLimit = toggleXueshuLimit;
+window.toggleMentorHotBadge = toggleMentorHotBadge;
+window.toggleAdminSidebar = toggleAdminSidebar; window.closeAdminSidebar = closeAdminSidebar;
+window.resetRealtimeData = resetRealtimeData; window.showApplied1 = showApplied1;
+window.editMentor = editMentor; window.saveMentor = saveMentor; window.toggleMentor = toggleMentor;
+window.uploadInfo = uploadInfo; window.delInfo = delInfo; window.loadInfoStatus = loadInfoStatus;
+window.editStudent = editStudent; window.saveStudent = saveStudent; window.toggleStudent = toggleStudent;
+window.updateSel = updateSel; window.toggleAll = toggleAll; window.clearSel = clearSel;
+window.batchResetPwd = batchResetPwd; window.doBatchResetPwd = doBatchResetPwd;
+window.batchEdit = batchEdit; window.doBatchEdit = doBatchEdit; window.batchDelete = batchDelete;
+window.resetPwd = resetPwd; window.doResetPwd = doResetPwd;
+window.delMentor = delMentor; window.delStudent = delStudent;
+window.showImport = showImport; window.doImport = doImport;
+window.loadMatches = loadMatches; window.setMatchView = setMatchView; window.setMatch = setMatch;
+window.applyMatchFilters = applyMatchFilters; window.resetMatchFilters = resetMatchFilters;
+window.changeMatchPageSize = changeMatchPageSize; window.applyMatchSummary = applyMatchSummary;
+window.openMentorMatchDetail = openMentorMatchDetail;
+window.loadLogs = loadLogs; window.applyLogFilters = applyLogFilters; window.resetLogFilters = resetLogFilters;
+window.loadExport = loadExport; window.loadMentors = loadMentors; window.loadStudents = loadStudents;
+window.loadDashboard = loadDashboard; window.loadOverview = loadOverview;
+window.loadDashboardVisitors = loadDashboardVisitors; window.setDashboardVisitorRole = setDashboardVisitorRole;
+window.searchDashboardVisitors = searchDashboardVisitors; window.changeDashboardVisitorPageSize = changeDashboardVisitorPageSize;
+window.openDashboardDetail = openDashboardDetail; window.loadDashboardDetail = loadDashboardDetail;
+window.changeDashboardDetailPageSize = changeDashboardDetailPageSize;
+window.mentorPage = mentorPage; window.changeMentorPageSize = changeMentorPageSize;
+window.applyMentorFilters = applyMentorFilters; window.resetMentorFilters = resetMentorFilters;
+window.changeStudentPageSize = changeStudentPageSize; window.applyStudentFilters = applyStudentFilters;
+window.resetStudentFilters = resetStudentFilters; window.setStudentQuickFilter = setStudentQuickFilter;
+
+init();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+[DEFAULT]
+bantime.increment = true
+bantime.factor = 2
+bantime.maxtime = 1d
+
+[sshd]
+enabled = true
+backend = systemd
+maxretry = 5
+findtime = 10m
+bantime = 1h
+
+[nginx-botsearch]
+enabled = true
+backend = auto
+port = http,https
+logpath = /var/log/nginx/access.log
+maxretry = 4
+findtime = 10m
+bantime = 4h
+
+[nginx-limit-req]
+enabled = true
+backend = auto
+port = http,https
+logpath = /var/log/nginx/error.log
+maxretry = 10
+findtime = 10m
+bantime = 2h
+
+[mentor-select-auth]
+enabled = true
+backend = auto
+port = http,https
+logpath = /var/log/nginx/access.log
+maxretry = 20
+findtime = 10m
+bantime = 30m
+
+[mentor-select-probes]
+enabled = true
+backend = auto
+port = http,https
+logpath = /var/log/nginx/access.log
+maxretry = 5
+findtime = 10m
+bantime = 4h
+
+[recidive]
+enabled = true
+backend = auto
+logpath = /var/log/fail2ban.log
+banaction = %(banaction_allports)s
+maxretry = 5
+findtime = 1d
+bantime = 1w

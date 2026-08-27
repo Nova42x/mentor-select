@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}导师端 - 导师双选{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="ph-title">导师工作台</div>
+    <div class="ph-desc">{{ me.name }}（{{ me.username }}）· 实时审核学生申请并管理配对</div>
+  </div>
+</div>
+
+<div id="banner"></div>
+<div class="stat-grid" id="quotaStats"></div>
+
+<div class="card table-card">
+  <div class="card-head">
+    <div>
+      <div class="ch-title">待审核申请</div>
+      <div class="ch-desc" id="applicantsSummary">加载中…</div>
+    </div>
+  </div>
+  <div class="table-wrap has-hint"><table>
+    <thead><tr><th>学生</th><th>专业 / 电话</th><th>个人简介</th><th>申请时间</th><th>操作</th></tr></thead>
+    <tbody id="applicants"></tbody>
+  </table></div>
+  <div id="emptyApplicants" style="display:none"><div class="empty-state">
+    <span class="es-icon">📭</span>
+    <div class="es-title">暂无待审核申请</div>
+    <div class="es-desc">学生提交申请后会实时显示在这里。</div>
+  </div></div>
+</div>
+
+<div class="card table-card">
+  <div class="card-head"><div><div class="ch-title">已配对学生</div><div class="ch-desc" id="acceptedSummary">加载中…</div></div></div>
+  <div class="table-wrap has-hint"><table>
+    <thead><tr><th>学生</th><th>专业</th><th>电话</th><th>配对时间</th><th>方式</th><th>操作</th></tr></thead>
+    <tbody id="accepted"></tbody>
+  </table></div>
+  <div id="emptyAccepted" style="display:none"><div class="empty-state">
+    <span class="es-icon">👥</span>
+    <div class="es-title">暂无已配对学生</div>
+    <div class="es-desc">同意学生申请后，配对结果会显示在这里。</div>
+  </div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const $ = UI.$;
+  const esc = UI.esc;
+
+  let loading = false;
+  let mentorState = {};
+  let applicantMap = new Map();
+
+  async function load() {
+    // 抽屉/确认框打开时不刷新，避免打断正在查看的内容
+    if (loading || UI.hasOverlay()) return;
+    loading = true;
+    try {
+      mentorState = await UI.api('/api/mentor/me');
+      renderBanner(mentorState);
+      renderStats(mentorState);
+      const d = await UI.api('/api/mentor/applicants');
+      renderAccepted(d.accepted);
+      renderApplicants(d.applicants, d.info);
+    } catch (e) { if (!e.sessionExpired) UI.toast(e.message, 'error'); }
+    finally { loading = false; }
+  }
+
+  function renderBanner(s) {
+    const phaseText = s.info.open
+      ? '实时互选进行中：学生可提交申请，待审核申请仍可继续处理'
+      : '学生申请已暂停：已有申请仍可继续处理';
+    const limitText = s.info.xueshu_limit_enabled
+      ? `；每位导师最多录取 ${s.info.xueshu_limit} 名学硕，您当前已录取 ${s.xueshu_taken} 名。`
+      : '。';
+    const warning = !s.info.open ||
+      (s.info.xueshu_limit_enabled && s.xueshu_taken >= s.info.xueshu_limit);
+    $('#banner').innerHTML = `<div class="banner ${warning ? 'banner-paused' : 'banner-info'}"><span class="banner-dot"></span>${phaseText}${limitText}</div>`;
+  }
+
+  function renderStats(s) {
+    const remaining = s.remaining;
+    const full = remaining <= 0;
+    $('#quotaStats').innerHTML = `
+      <div class="stat-card">
+        <div class="s-label">招生名额</div>
+        <div class="s-num">${s.me.quota}</div>
+        <div class="s-extra">本批次可接收学生总数</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">已配对</div>
+        <div class="s-num tone-success">${s.taken}</div>
+        <div class="s-extra">已确认接收的学生</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">剩余名额 ${full ? '<span class="tag tag-red">已满</span>' : ''}</div>
+        <div class="s-num ${full ? 'tone-error' : 'tone-warning'}">${remaining}</div>
+        <div class="s-extra">${full ? '名额已用完，其余待审核申请将自动退回' : '还可接收的学生数'}</div>
+      </div>
+      <div class="stat-card">
+        <div class="s-label">已录取学硕 ${s.info.xueshu_limit_enabled && s.xueshu_remaining <= 0 ? '<span class="tag tag-red">已达上限</span>' : ''}</div>
+        <div class="s-num ${s.xueshu_taken >= s.info.xueshu_limit ? 'tone-error' : 'tone-primary'}">${s.xueshu_taken}<span style="font-size:16px;font-weight:500"> / ${s.info.xueshu_limit}</span></div>
+        <div class="s-extra">${s.info.xueshu_limit_enabled ? '最多录取 3 名学硕，专硕不计入此上限' : '当前未启用学硕人数限制'}</div>
+      </div>`;
+  }
+
+  function renderAccepted(rows) {
+    rows = rows || [];
+    $('#acceptedSummary').textContent = rows.length ? `共 ${rows.length} 名学生` : '暂无';
+    const box = $('#accepted');
+    box.innerHTML = rows.map(a => `<tr>
+      <td><span class="cell-main">${esc(a.sname)}</span><div class="cell-sub">${esc(a.sno)}</div></td>
+      <td>${esc(a.major || '—')}</td>
+      <td>${esc(a.phone || '—')}</td>
+      <td>${esc(a.created_at || '—')}</td>
+      <td>${UI.sourceTag(a.source)}</td>
+      <td class="cell-actions">${a.source === 'request'
+        ? `<button class="btn btn-danger-outline btn-sm" type="button" onclick="cancelPairing(${a.pairing_id}, '${esc(a.sname)}')">撤回确认</button>`
+        : '<span class="empty-inline">管理员安排，如需调整请联系管理员</span>'}</td>
+    </tr>`).join('');
+    $('#emptyAccepted').style.display = rows.length ? 'none' : '';
+  }
+
+  function renderApplicants(rows) {
+    rows = rows || [];
+    applicantMap = new Map(rows.map(a => [a.request_id, a]));
+    $('#applicantsSummary').textContent = rows.length
+      ? `共 ${rows.length} 名学生等待审核 · 同意后将立即配对并占用 1 个名额`
+      : '暂无待审核申请';
+    const box = $('#applicants');
+    const remaining = mentorState.remaining;
+    const full = remaining <= 0;
+    box.innerHTML = rows.map(a => `<tr>
+      <td><span class="cell-main">${esc(a.sname)}</span><div class="cell-sub">${esc(a.sno)}</div></td>
+      <td>${esc(a.major || '—')} ${a.degree_category ? `<span class="tag tag-blue">${esc(a.degree_category)}</span>` : ''}<div class="cell-sub">${esc(a.phone || '')}</div></td>
+      <td style="max-width:300px"><div class="cell-sub clamp3">${esc(a.intro || '—')}</div>
+        ${(a.intro || '').length > 90 ? `<button class="link-btn" type="button" onclick="showIntro(${a.request_id})">查看完整介绍</button>` : ''}</td>
+      <td>${esc(a.created_at || '')}</td>
+      <td class="cell-actions">
+        <button class="btn btn-success btn-sm" type="button" onclick="decide(this, ${a.request_id}, 'accept', '${esc(a.sname)}')" ${(full || (mentorState.info.xueshu_limit_enabled && a.degree_category === '学硕' && mentorState.xueshu_remaining <= 0)) ? `disabled title="${full ? '名额已满，无法同意' : '已录取3名学硕，无法继续录取学硕学生'}"` : ''}>同意</button>
+        <button class="btn btn-danger-outline btn-sm" type="button" onclick="decide(this, ${a.request_id}, 'reject', '${esc(a.sname)}')">拒绝</button>
+      </td>
+    </tr>`).join('');
+    $('#emptyApplicants').style.display = rows.length ? 'none' : '';
+  }
+
+  function showIntro(requestId) {
+    const a = applicantMap.get(requestId);
+    if (!a) return;
+    UI.openDrawer({
+      title: `${a.sname} 的个人简介`,
+      meta: `${a.sno} · ${a.major || '未填写专业'}${a.phone ? ' · ' + a.phone : ''}`,
+      body: '<div class="pre-wrap">' + (a.intro ? esc(a.intro) : '<span class="empty-inline">暂无个人简介</span>') + '</div>'
+    });
+  }
+
+  async function decide(btn, requestId, decision, name) {
+    const isAccept = decision === 'accept';
+    const remaining = mentorState.remaining;
+    let message = isAccept
+      ? `确认同意学生「${name}」的申请？同意后将立即完成配对并占用 1 个名额。`
+      : `确认拒绝学生「${name}」的申请？拒绝后学生可以重新选择其他导师。`;
+    if (isAccept && remaining === 1) {
+      message += '\n\n注意：这是您的最后一个名额，同意后其余待审核申请将被自动退回。';
+    }
+    const applicant = applicantMap.get(requestId);
+    if (isAccept && applicant && applicant.degree_category === '学硕' &&
+        mentorState.info.xueshu_limit_enabled && mentorState.xueshu_remaining === 1) {
+      message += '\n\n注意：确认后将达到 3 名学硕上限，其余学硕待审核申请将自动退回。';
+    }
+    const ok = await UI.confirm({
+      title: isAccept ? '同意并配对' : '拒绝申请',
+      message: message,
+      okText: isAccept ? '同意并配对' : '确认拒绝',
+      danger: !isAccept
+    });
+    if (!ok) return;
+    btn = btn || null;
+    try {
+      const r = await UI.withBusy(btn, () => UI.api('/api/mentor/select', {
+        method: 'POST', body: JSON.stringify({ request_id: requestId, decision })
+      }));
+      let msg = isAccept ? '已完成配对' : '已拒绝申请';
+      if (r.xueshu_auto_cancelled) msg += `，另有 ${r.xueshu_auto_cancelled} 个学硕申请因达到上限自动退回`;
+      else if (r.auto_cancelled) msg += `，另有 ${r.auto_cancelled} 个待审核申请因名额已满自动退回`;
+      UI.toast(msg);
+      await load();
+    } catch (e) { UI.toast(e.message, 'error'); }
+  }
+
+  async function cancelPairing(pairingId, name) {
+    const ok = await UI.confirm({
+      title: '撤回配对确认',
+      message: `确认撤回与学生「${name}」的配对？\n撤回后该学生将恢复为可申请状态，名额同时释放。`,
+      okText: '撤回配对', danger: true
+    });
+    if (!ok) return;
+    try {
+      await UI.api('/api/mentor/pairing/cancel', { method: 'POST', body: JSON.stringify({ pairing_id: pairingId }) });
+      UI.toast('已撤回确认，学生可重新选择导师');
+      await load();
+    } catch (e) { UI.toast(e.message, 'error'); }
+  }
+
+  window.showIntro = showIntro;
+  window.decide = decide;
+  window.cancelPairing = cancelPairing;
+
+  UI.startPolling(load, { activeMs: 7000, hiddenMs: 30000 });
+})();
+</script>
+{% endblock %}

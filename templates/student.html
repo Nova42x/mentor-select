@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% block title %}学生端 - 导师双选{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="ph-title">导师选择</div>
+    <div class="ph-desc">浏览并比较导师，选择 1 名导师提交申请</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><div class="ch-title">我的信息</div></div>
+  <div class="desc-list">
+    <div class="dl-item"><div class="dl-label">姓名</div><div class="dl-value">{{ me.name }}</div></div>
+    <div class="dl-item"><div class="dl-label">学号</div><div class="dl-value mono">{{ me.username }}</div></div>
+    <div class="dl-item"><div class="dl-label">专业</div><div class="dl-value">{{ me.major or '未设置' }}</div></div>
+    <div class="dl-item"><div class="dl-label">学位类别</div><div class="dl-value">{{ me.degree_category or '—' }}</div></div>
+  </div>
+</div>
+
+<div id="banner"></div>
+
+<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="ch-title">实时互选流程</div>
+      <div class="ch-desc">选择导师 → 提交申请 → 等待导师审核 → 配对成功</div>
+    </div>
+  </div>
+  <div class="flow-steps" id="flowSteps"></div>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <div>
+      <div class="ch-title">导师信息总表</div>
+      <div class="ch-desc">导师研究方向、简介和联系方式等详细信息，请下载总表查看</div>
+    </div>
+    <a class="btn btn-default" href="/download/mentor_info">下载导师信息总表</a>
+  </div>
+</div>
+
+<div id="mainCard"></div>
+<div id="historyCard"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const $ = UI.$;
+  const esc = UI.esc;
+
+  let loading = false;
+  let selectedMentorId = '';
+  let mentorsMap = {};
+
+  async function load() {
+    // 弹窗/抽屉打开或正在提交时不打断页面
+    if (loading || UI.hasOverlay()) return;
+    loading = true;
+    try {
+      const d = await UI.api('/api/student/status');
+      renderBanner(d);
+      renderFlow(d);
+      if (d.pairing) renderPaired(d);
+      else if (d.request) renderPending(d);
+      else if (!$('#selectionForm')) await renderSelectable(d);
+      renderHistory(d.history || []);
+    } catch (e) { if (!e.sessionExpired) UI.toast(e.message, 'error'); }
+    finally { loading = false; }
+  }
+
+  function renderBanner(d) {
+    $('#banner').innerHTML = d.info.open
+      ? '<div class="banner banner-info"><span class="banner-dot"></span>实时互选进行中：选择导师并提交申请，导师确认后即完成配对。</div>'
+      : '<div class="banner banner-paused"><span class="banner-dot"></span>学院已暂停新的导师申请，已有申请仍可由导师审核。</div>';
+  }
+
+  function renderFlow(d) {
+    const state = d.pairing ? 'matched' : (d.request ? 'pending' : 'selectable');
+    const steps = [
+      ['选择导师', '浏览并选择 1 名导师'],
+      ['提交申请', '填写个人简介'],
+      ['等待审核', '导师同意后完成配对'],
+      ['配对成功', '锁定当前选择']
+    ];
+    let doneCount = -1, activeIndex = -1;
+    if (state === 'matched') doneCount = 4;
+    else if (state === 'pending') { doneCount = 2; activeIndex = 2; }
+    else if (d.info.open) { doneCount = 0; activeIndex = 0; }
+    $('#flowSteps').innerHTML = steps.map((s, i) => {
+      const cls = i < doneCount ? 'done' : i === activeIndex ? 'active' : 'waiting';
+      const label = i < doneCount ? '已完成' : i === activeIndex ? '进行中' : '等待开始';
+      return `<div class="flow-step ${cls}" ${i === activeIndex ? 'aria-current="step"' : ''}>
+        <span class="f-dot">${i < doneCount ? '✓' : i + 1}</span>
+        <span class="f-name">${s[0]}</span>
+        <span class="f-state">${label}${i === activeIndex ? ' · ' + s[1] : ''}</span>
+      </div>`;
+    }).join('');
+  }
+
+  async function renderSelectable(d) {
+    if (!d.info.open) {
+      $('#mainCard').innerHTML = `<div class="card"><div class="empty-state">
+        <span class="es-icon">⏸</span>
+        <div class="es-title">当前暂不能提交新申请</div>
+        <div class="es-desc">学院已暂停新的导师申请，请等待学院通知。</div>
+      </div></div>`;
+      return;
+    }
+    const md = await UI.api('/api/mentors');
+    mentorsMap = {};
+    (md.mentors || []).forEach(m => { mentorsMap[m.id] = m; });
+    const available = (md.mentors || []).filter(m => m.accepts_preferences);
+    if (!available.length) {
+      $('#mainCard').innerHTML = `<div class="card"><div class="empty-state">
+        <span class="es-icon">👥</span>
+        <div class="es-title">当前没有可申请的导师</div>
+        <div class="es-desc">符合您专业与学位类别的导师暂无空缺名额，请稍后查看或联系学院管理员。</div>
+      </div></div>`;
+      return;
+    }
+    selectedMentorId = '';
+    window._selectionOpen = true;
+    const cards = available.map(m => `<div class="mentor-card" id="mc_${m.id}">
+      <div class="mc-top">
+        <span class="mc-name-line"><span class="mc-name">${esc(m.name)}</span>${m.is_hot ? '<span class="mentor-hot-badge" title="当前选择热度较高" aria-label="热门导师">🔥</span>' : ''}</span>
+        ${m.title ? `<span class="mc-title">${esc(m.title)}</span>` : ''}
+      </div>
+      ${m.area ? `<div class="mc-tagline">${esc(m.area)}</div>` : ''}
+      <div class="mc-tags">${(m.allowed_majors || []).map(x => `<span class="tag tag-gray">${esc(x)}</span>`).join('')}</div>
+      ${m.intro ? `<div class="mc-intro">${esc(m.intro)}</div>` : ''}
+      <div class="mc-foot">
+        <button class="link-btn" type="button" onclick="showMentorIntro(${m.id})">查看完整介绍</button>
+        <button class="btn btn-default btn-sm" type="button" onclick="selectMentor(${m.id})">选择</button>
+      </div>
+    </div>`).join('');
+    $('#mainCard').innerHTML = `
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="ch-title">可选导师（${available.length} 位）</div>
+            <div class="ch-desc">已按您所在专业「${esc(md.student_major || '未设置')}」与学位类别筛选</div>
+          </div>
+        </div>
+        <div class="mentor-grid">${cards}</div>
+      </div>
+      <div class="card application-card" id="selectionForm">
+        <div class="card-head">
+          <div>
+            <div class="ch-title">提交申请</div>
+            <div class="ch-desc">确认导师并完善申请信息</div>
+          </div>
+        </div>
+        <div class="application-form">
+          <div class="tip-block tip-blue application-mentor">已选择导师：<b id="selectedMentorName">尚未选择</b>
+            <button class="link-btn" type="button" onclick="clearSelection()">重新选择</button></div>
+          <input type="hidden" id="selectedMentorId" value="">
+          <div class="form-item">
+            <label for="studentPhone">手机号码</label>
+            <input type="tel" id="studentPhone" value="${esc(d.me && d.me.phone || '')}" maxlength="20" placeholder="请输入本人常用手机号码" autocomplete="tel" inputmode="tel">
+          </div>
+          <div class="form-item">
+            <label for="intro">个人介绍（导师可见）</label>
+            <textarea id="intro" rows="8" maxlength="1000" placeholder="请简要介绍本科背景（院校专业）、学习与工作经历、兴趣方向及相关成果：科研、竞赛、大创、毕设。">${esc(d.me && d.me.intro || '')}</textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" id="submitBtn" type="button" onclick="submitRequest()">提交申请</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function showMentorIntro(id) {
+    const m = mentorsMap[id];
+    if (!m) return;
+    UI.openDrawer({
+      title: m.name + (m.title ? ' · ' + m.title : ''),
+      meta: (m.area || '研究方向未填写') + (m.allowed_majors && m.allowed_majors.length ? ' ｜ 招生专业：' + m.allowed_majors.join('、') : ''),
+      body: '<div class="pre-wrap">' + (m.intro ? esc(m.intro) : '<span class="empty-inline">暂无个人简介</span>') + '</div>',
+      foot: '<button class="btn btn-default" type="button" data-drawer-close>关闭</button>' +
+            (window._selectionOpen ? `<button class="btn btn-primary" type="button" onclick="UI.closeDrawer();selectMentor(${id})">选择该导师</button>` : '')
+    });
+  }
+
+  function selectMentor(id) {
+    const m = mentorsMap[id];
+    if (!m) return;
+    selectedMentorId = id;
+    document.querySelectorAll('.mentor-card').forEach(c => {
+      const on = c.id === 'mc_' + id;
+      c.classList.toggle('is-selected', on);
+      const b = c.querySelector('.mc-foot .btn:last-child');
+      if (b) { b.textContent = on ? '已选择' : '选择'; b.className = 'btn btn-sm ' + (on ? 'btn-success' : 'btn-default'); }
+    });
+    const form = $('#selectionForm');
+    if (form) {
+      $('#selectedMentorId').value = id;
+      $('#selectedMentorName').textContent = m.name + (m.title ? '（' + m.title + '）' : '');
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function clearSelection() {
+    selectedMentorId = '';
+    window._selectionOpen = true;
+    document.querySelectorAll('.mentor-card').forEach(c => {
+      c.classList.remove('is-selected');
+      const b = c.querySelector('.mc-foot .btn:last-child');
+      if (b) { b.textContent = '选择'; b.className = 'btn btn-default btn-sm'; }
+    });
+    if ($('#selectionForm')) {
+      $('#selectedMentorId').value = '';
+      $('#selectedMentorName').textContent = '尚未选择';
+    }
+  }
+
+  function renderPaired(d) {
+    const p = d.pairing;
+    window._selectionOpen = false;
+    $('#mainCard').innerHTML = `<div class="card">
+      <div class="state-card">
+        <div class="sc-icon sc-success">✓</div>
+        <div class="sc-body">
+          <div class="sc-title">配对成功</div>
+          <div class="sc-desc">您已与导师 <b>${esc(p.mentor_name)}</b>${p.mentor_title ? '（' + esc(p.mentor_title) + '）' : ''} 配对成功，当前选择已锁定。</div>
+        </div>
+      </div>
+      <div class="tip-block" style="margin-top:16px">如确需调整导师，请联系学院管理员处理。</div>
+    </div>`;
+  }
+
+  function renderPending(d) {
+    const r = d.request;
+    window._selectionOpen = false;
+    $('#mainCard').innerHTML = `<div class="card">
+      <div class="state-card">
+        <div class="sc-icon sc-pending">⏳</div>
+        <div class="sc-body">
+          <div class="sc-title">申请已提交，等待导师审核</div>
+          <div class="sc-desc">您当前申请的导师：<b>${esc(r.mentor_name)}</b>${r.mentor_title ? '（' + esc(r.mentor_title) + '）' : ''}。导师同意后将立即完成配对；审核前您可以撤回申请并重新选择。</div>
+          <div class="sc-actions">
+            <button class="btn btn-danger-outline" type="button" onclick="cancelRequest()">撤回申请</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderHistory(rows) {
+    const visible = (rows || []).filter(r => r.status !== 'pending' && r.status !== 'accepted');
+    $('#historyCard').innerHTML = `<div class="card table-card">
+      <div class="card-head"><div><div class="ch-title">申请记录</div><div class="ch-desc">仅显示已结束的申请，便于您了解处理过程</div></div></div>
+      ${visible.length ? `<div class="table-wrap has-hint"><table>
+        <thead><tr><th>申请导师</th><th>状态</th><th>申请时间</th><th>处理时间</th></tr></thead>
+        <tbody>${visible.map(r => {
+          const extra = (r.cancel_reason === 'mentor_withdrew_pairing') ? '导师撤回确认' : (UI.cancelReasonText(r.cancel_reason) || '');
+          return `<tr>
+            <td><span class="cell-main">${esc(r.mentor_name)}</span></td>
+            <td>${UI.statusTag(r.status, extra || null)}</td>
+            <td>${esc(r.created_at || '')}</td>
+            <td>${esc(r.responded_at || '—')}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>`
+      : `<div class="empty-state"><span class="es-icon">📋</span>
+          <div class="es-title">暂无历史申请</div>
+          <div class="es-desc">提交申请并结束后，处理记录会显示在这里。</div>
+        </div>`}
+    </div>`;
+  }
+
+  async function submitRequest() {
+    const mentorId = $('#selectedMentorId') && $('#selectedMentorId').value;
+    if (!mentorId) return UI.toast('请先在导师卡片中选择一位导师', 'error');
+    const m = mentorsMap[mentorId];
+    const name = m ? m.name : '该导师';
+    const ok = await UI.confirm({
+      title: '确认提交申请',
+      message: `提交后将等待导师「${name}」审核，确认提交吗？`,
+      okText: '确认提交'
+    });
+    if (!ok) return;
+    const btn = $('#submitBtn');
+    try {
+      await UI.withBusy(btn, () => UI.api('/api/student/preference', {
+        method: 'POST', body: JSON.stringify({ mentor_id: +mentorId,
+          phone: $('#studentPhone').value, intro: $('#intro').value })
+      }));
+      UI.toast('申请已提交');
+      await load();
+    } catch (e) { UI.toast(e.message, 'error'); }
+  }
+
+  async function cancelRequest() {
+    const ok = await UI.confirm({
+      title: '撤回申请',
+      message: '确认撤回当前申请？撤回后可以重新选择导师。',
+      okText: '撤回申请', danger: true
+    });
+    if (!ok) return;
+    try {
+      await UI.api('/api/student/request/cancel', { method: 'POST', body: '{}' });
+      UI.toast('申请已撤回');
+      await load();
+    } catch (e) { UI.toast(e.message, 'error'); }
+  }
+
+  window.showMentorIntro = showMentorIntro;
+  window.selectMentor = selectMentor;
+  window.clearSelection = clearSelection;
+  window.submitRequest = submitRequest;
+  window.cancelRequest = cancelRequest;
+
+  UI.startPolling(load, { activeMs: 7000, hiddenMs: 30000 });
+})();
+</script>
+{% endblock %}

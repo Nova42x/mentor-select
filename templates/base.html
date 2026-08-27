@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}导师双选{% endblock %}</title>
+<link rel="icon" type="image/png" href="/static/app-icon.png">
+<link rel="apple-touch-icon" href="/static/app-icon.png">
+<link rel="stylesheet" href="/static/style.css">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% block head_extra %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+{% set role_label = {'student': '学生端', 'mentor': '导师端', 'admin': '管理后台'}.get(me.role, '') %}
+<header class="navbar">
+  <div class="brand">
+    <img class="brand-logo" src="/static/app-icon.png" alt="安农导师双选">
+    <span>导师双选</span>
+    {% if role_label %}<small>{{ role_label }}</small>{% endif %}
+  </div>
+  <div class="right">
+    <span class="user-chip">
+      <span class="avatar">{{ me.name[:1] if me.name else '?' }}</span>
+      <span class="u-wrap">
+        <span class="u-name">{{ me.name }}</span>
+        <span class="u-sub">{{ me.username }}</span>
+      </span>
+    </span>
+    <a class="nav-link" href="/password">修改密码</a>
+    <a class="nav-link" href="/logout">退出</a>
+  </div>
+</header>
+<main class="page {% block page_class %}{% endblock %}">
+{% block content %}{% endblock %}
+</main>
+
+<!-- 全局提示 -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- 通用模态框 -->
+<div class="modal-mask" id="modalMask" onclick="if(event.target===this)UI.closeModal()">
+  <div class="modal" id="modalBox" role="dialog" aria-modal="true"></div>
+</div>
+
+<script src="/static/ui.js"></script>
+<script>
+/* 全局键盘关闭：Esc 关闭模态框或抽屉 */
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    var drawer = document.getElementById('drawerMask');
+    if (drawer && drawer.classList.contains('show')) UI.closeDrawer();
+    else if (document.getElementById('modalMask').classList.contains('show')) UI.closeModal();
+  }
+});
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
