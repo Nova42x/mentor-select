@@ -2,7 +2,9 @@
 
 学生申请一名符合专业和招生类别的导师；导师同意后立即完成配对并锁定学生和名额。导师达到招生名额时，系统自动退回该导师其余待审核申请。管理员可以暂停新申请、解除配对或重新指定导师。
 
-> 本仓库为从实际部署项目整理出的公开版本：已移除真实名单、账号、服务器地址等敏感信息，保留通用功能、测试与部署示例。如需接入真实数据，请按本文档导入自己的名单。
+> 本仓库为从实际部署项目整理出的公开版本
+> <img width="1913" height="913" alt="image" src="https://github.com/user-attachments/assets/a556ff26-1fd2-4e9b-b985-21ce0f9be83e" />
+<img width="1886" height="910" alt="image" src="https://github.com/user-attachments/assets/1b868a23-b171-4f46-9723-36c0920d2a2c" />
 
 ## 技术栈
 
@@ -14,6 +16,7 @@
 中小规模（数百名学生、数十名导师）无需引入消息队列或 WebSocket。页面每 7 秒刷新一次状态，关键操作后立即刷新。
 
 ## 实时互选规则
+<img width="1886" height="908" alt="image" src="https://github.com/user-attachments/assets/15404b61-9312-442b-b13d-c4e22e6ce114" />
 
 1. 学生同一时间只能有一个待审核申请。
 2. 待审核期间学生可以撤回并重新选择。
@@ -84,6 +87,6 @@ $env:PYTHONIOENCODING='utf-8'
 
 ## 部署与运维
 
-- 参考 `deploy/` 下的 systemd、nginx、fail2ban 与安全加固脚本；其中的 IP（`203.0.113.10`）和域名（`example.com`）为占位符，需替换为实际值。
+- 参考 `deploy/` 下的 systemd、nginx、fail2ban 与安全加固脚本；其中的 IP 和域名（`example.com`）为占位符，需替换为实际值。
 - 部署/切换前使用 `backup_db.py` 备份当前数据库。
 - 详细需求与验收清单见 `docs/requirements.md`。
