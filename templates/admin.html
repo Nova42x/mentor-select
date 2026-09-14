@@ -81,7 +81,7 @@ let activeTab = 'dashboard';
 
 const ADMIN_PAGES = {
   dashboard: ['数据看板', '查看互选进度、访问趋势与用户访问明细'],
-  overview: ['互选控制', '管理实时互选入口、登录安全设置和导师名额'],
+  overview: ['互选控制', '管理实时互选入口、登录安全与学院/专业等基础选项'],
   mentors: ['导师管理', '维护导师账号、招生专业、招生类别与名额'],
   students: ['学生管理', '查询并维护学生账号、专业与当前申请状态'],
   matches: ['匹配管理', '查看实时配对结果，并由管理员调整或解除配对'],
@@ -380,7 +380,6 @@ function renderBanner(inf) {
 
 async function loadOverview() {
   const d = await UI.api('/api/admin/overview');
-  window._overviewMentors = d.mentors;
   info = d.info;
   renderBanner(d.info);
   const st = d.stats;
@@ -448,38 +447,24 @@ async function loadOverview() {
       </div>
     </div>
 
-    <div class="card table-card">
+    <div class="card">
       <div class="card-head">
         <div>
-          <div class="ch-title">导师申请与名额</div>
-          <div class="ch-desc">导师达到总名额后自动退回全部待审核申请；学硕上限开启时，第 3 名学硕确认后仅退回剩余学硕申请</div>
+          <div class="ch-title">基础选项设置</div>
+          <div class="ch-desc">维护学院、专业、招生类别与职称选项；导师设置、学生设置和批量导入的下拉选项都取自这里，无需手填。</div>
+        </div>
+        <div class="ch-actions">
+          <button class="btn btn-default" type="button" onclick="loadOptionSettings(true)">重新载入</button>
+          <button class="btn btn-primary" type="button" onclick="saveOptionSettings(this)">保存设置</button>
         </div>
       </div>
-      <div class="table-wrap has-hint"><table>
-        <thead><tr><th>导师账号</th><th>导师</th><th>招生名额</th><th>待审核申请</th><th>申请名单</th><th>已配对</th><th>已录取学硕</th><th>名额占用</th></tr></thead>
-        <tbody>${d.mentors.map(m => {
-          const used = m.occupied ?? (m.matched + m.approved);
-          const pct = Math.round(used / m.quota * 100);
-          const over = pct > 100;
-          const appliedOver = m.applied > m.quota;
-          return `<tr>
-            <td><span class="mono">${esc(m.username)}</span></td>
-            <td><span class="cell-main">${esc(m.name)}</span>${m.title ? `<div class="cell-sub">${esc(m.title)}</div>` : ''}</td>
-            <td>${m.quota}</td>
-            <td><span class="${appliedOver ? 'tag tag-red' : 'tag tag-orange'}">${m.applied} 人</span></td>
-            <td>${(m.applied1_names || []).length ? `<button class="btn btn-default btn-xs" type="button" onclick="showApplied1(${m.id})">查看（${(m.applied1_names || []).length} 人）</button>` : '<span class="empty-inline">—</span>'}</td>
-            <td>${m.matched}</td>
-            <td><span class="tag ${m.xueshu_matched > 3 ? 'tag-red' : (m.xueshu_matched === 3 ? 'tag-orange' : 'tag-blue')}">${m.xueshu_matched}/3</span></td>
-            <td style="white-space:nowrap"><span class="qbar"><i class="${over ? 'over' : ''}" style="width:${Math.min(pct, 100)}%"></i></span>
-              <span class="qbar-num ${over ? 'over' : ''}">${used}/${m.quota}</span></td>
-          </tr>`;
-        }).join('') || '<tr><td colspan="8" class="empty">暂无导师</td></tr>'}</tbody>
-      </table></div>
+      <div id="optionSettings" class="option-settings">选项加载中…</div>
     </div>`;
   renderPhaseControl(d);
   renderXueshuLimit(d);
   renderMentorHotBadge(d);
   renderPwdPolicy(d);
+  loadOptionSettings();
 }
 
 function renderPhaseControl(d) {
@@ -628,7 +613,170 @@ async function resetRealtimeData() {
   } catch (e) { UI.toast(e.message, 'error'); }
 }
 
+/* ---------- 基础选项设置 ---------- */
+let optionSettings = null;
+
+function optionRows(list, name, placeholder) {
+  const items = (list || []).length ? list : [''];
+  return items.map((value, index) => `<div class="option-row">
+    <input type="text" name="${name}" value="${esc(value)}" placeholder="${esc(placeholder)}"
+      oninput="markOptionDirty()" onkeydown="if(event.key==='Enter'){event.preventDefault();addOptionRow('${name}')}">
+    <button class="btn btn-text btn-sm option-remove" type="button" title="删除该选项" aria-label="删除该选项" onclick="removeOptionRow(this)">✕</button>
+  </div>`).join('');
+}
+
+function degreeRows(majors, degreeMap) {
+  const list = (majors || []).filter(Boolean);
+  if (!list.length) {
+    return '<div class="option-empty">先添加专业，再为每个专业指定学硕或专硕。</div>';
+  }
+  return list.map(major => `<div class="option-degree-row">
+    <span class="option-degree-name">${esc(major)}</span>
+    <div class="visitor-segmented option-degree-segmented">
+      <button type="button" data-major="${esc(major)}" class="${degreeMap[major] === '学硕' ? 'active' : ''}" onclick="setDegree(this.dataset.major,'学硕',this)">学硕</button>
+      <button type="button" data-major="${esc(major)}" class="${degreeMap[major] === '专硕' ? 'active' : ''}" onclick="setDegree(this.dataset.major,'专硕',this)">专硕</button>
+    </div>
+    <button class="btn btn-text btn-sm" type="button" data-major="${esc(major)}" onclick="clearDegree(this.dataset.major)">不指定</button>
+  </div>`).join('');
+}
+
+function optionPanelBody(o) {
+  return `
+    <div class="option-grid">
+      <div class="option-block">
+        <div class="option-block-head"><h4>学院</h4><span>导师所属学院与筛选顺序</span></div>
+        <div class="option-list" id="optionColleges">${optionRows(o.colleges, 'colleges', '如：人工智能学院')}</div>
+        <button class="btn btn-default btn-sm" type="button" onclick="addOptionRow('colleges')">＋ 添加学院</button>
+      </div>
+      <div class="option-block">
+        <div class="option-block-head"><h4>招生类别</h4><span>导师可招收的学位类别</span></div>
+        <div class="option-list" id="optionCategories">${optionRows(o.categories, 'categories', '如：学硕/专硕')}</div>
+        <button class="btn btn-default btn-sm" type="button" onclick="addOptionRow('categories')">＋ 添加类别</button>
+      </div>
+      <div class="option-block">
+        <div class="option-block-head"><h4>职称</h4><span>导师设置中的职称候选</span></div>
+        <div class="option-list" id="optionTitles">${optionRows(o.titles, 'titles', '如：副教授')}</div>
+        <button class="btn btn-default btn-sm" type="button" onclick="addOptionRow('titles')">＋ 添加职称</button>
+      </div>
+    </div>
+    <div class="option-block option-block-wide">
+      <div class="option-block-head"><h4>专业</h4><span>专业同时用于学生与导师的专业下拉，学硕/专硕归属决定招生名额规则</span></div>
+      <div class="option-list option-list-grid" id="optionMajors">${optionRows(o.majors, 'majors', '如：计算机技术')}</div>
+      <button class="btn btn-default btn-sm" type="button" onclick="addOptionRow('majors')">＋ 添加专业</button>
+      <div class="option-degree-table">
+        <div class="option-degree-head">学位类别归属</div>
+        ${degreeRows(o.majors, o.degree_map || {})}
+      </div>
+    </div>
+    <div class="option-note">保存后立即生效：学生端会看到新的专业表述，导师端与批量导入的下拉选项同步更新。已录入但被删除的选项仍会保留在下拉末尾，便于历史数据筛选。</div>`;
+}
+
+async function loadOptionSettings(force = false) {
+  const box = $('#optionSettings');
+  if (!box) return;
+  if (optionSettings && !force) { box.innerHTML = optionPanelBody(optionSettings); return; }
+  box.innerHTML = '<div class="option-loading">选项加载中…</div>';
+  try {
+    const d = await UI.api('/api/admin/options');
+    optionSettings = d.options;
+    box.innerHTML = optionPanelBody(optionSettings);
+  } catch (e) {
+    box.innerHTML = `<div class="option-loading">选项加载失败：${esc(e.message)}</div>`;
+  }
+}
+
+function collectOptionValues(name) {
+  return Array.from(document.querySelectorAll(`#optionSettings input[name="${name}"]`))
+    .map(input => input.value.trim()).filter(Boolean)
+    .filter((value, index, list) => list.indexOf(value) === index);
+}
+
+function addOptionRow(name) {
+  const list = $(`#option${name.charAt(0).toUpperCase() + name.slice(1)}`);
+  if (!list) return;
+  list.insertAdjacentHTML('beforeend',
+    `<div class="option-row"><input type="text" name="${name}" placeholder="" oninput="markOptionDirty()">
+      <button class="btn btn-text btn-sm option-remove" type="button" onclick="removeOptionRow(this)">✕</button></div>`);
+  list.lastElementChild.querySelector('input')?.focus();
+  markOptionDirty();
+}
+
+function removeOptionRow(btn) {
+  const row = btn.closest('.option-row');
+  const name = row?.querySelector('input')?.name;
+  row?.remove();
+  if (name === 'majors') {
+    const current = collectOptionValues('majors');
+    Object.keys(optionSettings?.degree_map || {}).forEach(major => {
+      if (!current.includes(major)) delete optionSettings.degree_map[major];
+    });
+    syncDegreeRows();
+  }
+  markOptionDirty();
+}
+
+function syncDegreeRows() {
+  const holder = document.querySelector('.option-degree-table');
+  if (!holder) return;
+  const majors = collectOptionValues('majors');
+  holder.innerHTML = `<div class="option-degree-head">学位类别归属</div>
+    ${degreeRows(majors, optionSettings?.degree_map || {})}`;
+}
+
+function setDegree(major, degree, btn) {
+  if (!optionSettings) optionSettings = {};
+  optionSettings.degree_map = optionSettings.degree_map || {};
+  optionSettings.degree_map[major] = degree;
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  markOptionDirty();
+}
+
+function clearDegree(major) {
+  if (optionSettings?.degree_map) delete optionSettings.degree_map[major];
+  syncDegreeRows();
+  markOptionDirty();
+}
+
+function markOptionDirty() {
+  const save = document.querySelector('#optionSettings')?.closest('.card')?.querySelector('.btn-primary');
+  save?.classList.add('option-unsaved');
+}
+
+async function saveOptionSettings(btn) {
+  const body = {
+    colleges: collectOptionValues('colleges'),
+    categories: collectOptionValues('categories'),
+    titles: collectOptionValues('titles'),
+    majors: collectOptionValues('majors'),
+    degree_map: optionSettings?.degree_map || {}
+  };
+  if (!body.majors.length) return UI.toast('至少需要保留一个专业', 'error');
+  if (!body.colleges.length) return UI.toast('至少需要保留一个学院', 'error');
+  try {
+    const r = await UI.withBusy(btn, () => UI.api('/api/admin/options', { method: 'POST', body: JSON.stringify(body) }));
+    optionSettings = r.options;
+    $('#optionSettings').innerHTML = optionPanelBody(optionSettings);
+    btn.classList.remove('option-unsaved');
+    UI.toast('基础选项已保存，学生端与导师端下拉选项已更新');
+  } catch (e) { UI.toast(e.message, 'error'); }
+}
+
 /* ---------- 导师管理 ---------- */
+/* 下拉选项统一来自“互选控制 → 基础选项设置”。
+   ensureCurrent 会把记录里已有的旧取值补进列表，避免编辑时被静默改掉。 */
+function ensureCurrent(list, current) {
+  const items = (list || []).slice();
+  if (current && !items.includes(current)) items.push(current);
+  return items;
+}
+
+function degreeTagOf(major) {
+  const degree = optionSettings?.degree_map?.[major] || '';
+  if (!degree) return '';
+  return `<em class="major-pick-degree">${esc(degree)}</em>`;
+}
+
 const mentorView = {
   q: '', college: '', category: '', major: '', status: '', page: 1,
   pageSize: Number(localStorage.getItem('mentor-page-size')) || 20
@@ -746,16 +894,24 @@ function changeMentorPageSize() {
 }
 
 function editMentor(id = null) {
+  if (!optionSettings) { UI.toast('选项尚未加载完成，请稍后再试', 'error'); return; }
   const d = window._mentors || [];
   const m = d.find(x => x.id === id) || {};
+  const o = optionSettings || { colleges: [], titles: [], categories: [], majors: [] };
+  const colleges = ensureCurrent(o.colleges, m.college);
+  const titles = ensureCurrent(o.titles, m.title);
+  const categories = ensureCurrent(o.categories, m.admission_category);
+  const majors = ensureCurrent(o.majors, null);
+  const chosen = m.allowed_majors || [];
   UI.openModal(`<div class="modal-head"><h3>${id ? '编辑导师' : '新增导师'}</h3><button class="modal-close" type="button" onclick="UI.closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="form-item"><label>工号（7位正式工号；临时账号可迁移为正式工号）</label><input type="text" id="m_user" value="${esc(m.username || '')}" ${id && /^\d{7}$/.test(m.username) ? 'disabled' : ''}></div>
       <div class="form-item"><label>姓名</label><input type="text" id="m_name" value="${esc(m.name || '')}"></div>
-      <div class="form-item"><label>学院</label><select id="m_college"><option value="">请选择学院</option><option value="人工智能学院" ${m.college === '人工智能学院' ? 'selected' : ''}>人工智能学院</option><option value="电子与电气工程学院" ${m.college === '电子与电气工程学院' ? 'selected' : ''}>电子与电气工程学院</option></select></div>
-      <div class="form-item"><label>职称</label><input type="text" id="m_title" value="${esc(m.title || '')}"></div>
-      <div class="form-item"><label>招生类别</label><input type="text" id="m_category" value="${esc(m.admission_category || '')}" placeholder="如：学硕/专硕"></div>
-      <div class="form-item"><label>可招生专业（每行一个）</label><textarea id="m_majors" placeholder="计算机科学与技术&#10;计算机技术">${esc((m.allowed_majors || []).join('\n'))}</textarea></div>
+      <div class="form-item"><label>学院</label><select id="m_college"><option value="">请选择学院</option>${colleges.map(v => `<option value="${esc(v)}" ${v === (m.college || '') ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
+      <div class="form-item"><label>职称</label><select id="m_title"><option value="">请选择职称</option>${titles.map(v => `<option value="${esc(v)}" ${v === (m.title || '') ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
+      <div class="form-item"><label>招生类别</label><select id="m_category"><option value="">请选择招生类别</option>${categories.map(v => `<option value="${esc(v)}" ${v === (m.admission_category || '') ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
+      <div class="form-item"><label>可招生专业（可多选）</label>
+        <div class="major-picker">${majors.map(v => `<label class="major-pick"><input type="checkbox" name="m_major" value="${esc(v)}" ${chosen.includes(v) ? 'checked' : ''}><span>${esc(v)}</span>${degreeTagOf(v)}</label>`).join('') || '<span class="option-empty">请先在“互选控制”里添加专业</span>'}</div></div>
       <div class="form-item"><label>研究方向</label><input type="text" id="m_area" value="${esc(m.area || '')}"></div>
       <div class="form-item"><label>简介（学生可见）</label><textarea id="m_intro">${esc(m.intro || '')}</textarea></div>
       <div class="form-item"><label>招生名额</label><input type="number" id="m_quota" value="${m.quota || 3}" min="1"></div>
@@ -772,7 +928,7 @@ async function saveMentor(btn, id) {
     const body = { id, username: $('#m_user').value.trim(), name: $('#m_name').value.trim(),
       college: $('#m_college').value, title: $('#m_title').value.trim(),
       admission_category: $('#m_category').value.trim(),
-      allowed_majors: $('#m_majors').value.split(/\n+/).map(x => x.trim()).filter(Boolean),
+      allowed_majors: Array.from(document.querySelectorAll('input[name="m_major"]:checked')).map(cb => cb.value),
       area: $('#m_area').value.trim(), intro: $('#m_intro').value.trim(),
       quota: parseInt($('#m_quota').value) || 3, password: $('#m_pwd').value.trim() };
     if (!body.name) return UI.toast('姓名必填', 'error');
@@ -1011,8 +1167,10 @@ function renderPager(kind, p) {
 }
 
 function editStudent(id = null) {
+  if (!optionSettings) { UI.toast('选项尚未加载完成，请稍后再试', 'error'); return; }
   const d = window._students || [];
   const s = d.find(x => x.id === id) || {};
+  const majors = ensureCurrent(optionSettings.majors, s.major);
   const accountAction = id ? `<div class="student-modal-account-actions">
         <button class="btn btn-default" type="button" onclick="resetPwd('student', ${id})">重置密码</button>
         <button class="btn ${s.active ? 'btn-danger-outline' : 'btn-default'}" type="button" onclick="toggleStudent(${id})">${s.active ? '停用账号' : '启用账号'}</button>
@@ -1022,7 +1180,7 @@ function editStudent(id = null) {
     <div class="modal-body">
       <div class="form-item"><label>学号（登录账号）</label><input type="text" id="s_user" value="${esc(s.username || '')}" ${id ? 'disabled' : ''}></div>
       <div class="form-item"><label>姓名</label><input type="text" id="s_name" value="${esc(s.name || '')}"></div>
-      <div class="form-item"><label>专业</label><input type="text" id="s_major" value="${esc(s.major || '')}"></div>
+      <div class="form-item"><label>专业</label><select id="s_major"><option value="">请选择专业</option>${majors.map(v => `<option value="${esc(v)}" ${v === (s.major || '') ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
       <div class="form-item"><label>手机号</label><input type="text" id="s_phone" value="${esc(s.phone || '')}"></div>
       <div class="form-item"><label>备注</label><input type="text" id="s_remark" value="${esc(s.remark || '')}"></div>
       ${id ? '' : '<div class="form-item"><label>初始密码（建议按名单设置；留空则与学号相同）</label><input type="text" id="s_pwd"></div>'}
@@ -1129,7 +1287,9 @@ function batchEdit(kind) {
     <div class="modal-body">
       <div class="tip-block" style="margin-bottom:12px">为选中的 <b>${n}</b> 个${kind === 'student' ? '学生' : '导师'}统一设置</div>
       <div class="form-item"><label>字段</label><select id="bef">${fields}</select></div>
-      <div class="form-item"><label>值</label><input type="text" id="bev" placeholder="${kind === 'mentor' ? '如：5' : '如：人工智能 / 接受'}"></div>
+      <div class="form-item"><label>值</label>${kind === 'student'
+        ? `<select id="bev"><option value="">请选择专业</option>${ensureCurrent(optionSettings?.majors, null).map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('')}</select>`
+        : '<input type="number" id="bev" min="1" placeholder="如：5">'}</div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-default" type="button" onclick="UI.closeModal()">取消</button>
@@ -1141,6 +1301,8 @@ async function doBatchEdit(btn, kind) {
   const field = $('#bef').value;
   let value = $('#bev').value.trim();
   if (field === 'accept_adjust') value = (value === '接受' || value === '1') ? 1 : 0;
+  if (kind === 'student' && field === 'major' && !value) return UI.toast('请选择专业', 'error');
+  if (kind === 'mentor' && field === 'quota' && !(parseInt(value) >= 1)) return UI.toast('招生名额至少为 1', 'error');
   try {
     const r = await UI.withBusy(btn, () => UI.api('/api/admin/batch_edit', { method: 'POST', body: JSON.stringify({ kind, ids: getSelIds(kind), field, value }) }));
     UI.toast(`已修改 ${r.count} 项`);
@@ -1221,6 +1383,24 @@ async function delStudent(id) {
   catch (e) { UI.toast(e.message, 'error'); }
 }
 
+function importOptionHint() {
+  const o = optionSettings || {};
+  const join = list => (list && list.length ? list.map(esc).join('、') : '未设置');
+  return `可选学院：${join(o.colleges)}<br>可选专业：${join(o.majors)}<br>` +
+    `可选招生类别：${join(o.categories)}　可选职称：${join(o.titles)}`;
+}
+
+function fillImportTemplate() {
+  const o = optionSettings || {};
+  const first = list => (list && list.length ? list[0] : '');
+  const kind = $('#imp_kind')?.value || 'student';
+  const text = kind === 'student'
+    ? `学号,姓名,专业,手机号,密码\n2026999001,示例学生,${first(o.majors)},13800000000,`
+    : `工号,姓名,学院,职称,招生类别,可招生专业,研究方向,简介,名额,密码\n2999999,示例导师,${first(o.colleges)},${first(o.titles)},${first(o.categories)},"${first(o.majors)}",研究方向,简介,3,`;
+  const box = $('#imp_text');
+  if (box) { box.value = text; box.focus(); }
+}
+
 function showImport(kind) {
   const k = kind || 'student';
   UI.openModal(`<div class="modal-head"><h3>批量导入（CSV 格式）</h3><button class="modal-close" type="button" onclick="UI.closeModal()">✕</button></div>
@@ -1229,9 +1409,12 @@ function showImport(kind) {
         <select id="imp_kind"><option value="student" ${k === 'student' ? 'selected' : ''}>学生导入</option><option value="mentor" ${k === 'mentor' ? 'selected' : ''}>导师导入</option></select></div>
       <div class="form-item"><label>粘贴 CSV 内容（第一行可以是表头）</label>
         <textarea id="imp_text" rows="6" placeholder="账号,姓名,专业,手机号,密码&#10;13800000001,张三,计算机技术,13800000001,13800000001"></textarea></div>
+      <div class="form-item"><button class="btn btn-default btn-sm" type="button" onclick="fillImportTemplate()">按当前选项生成模板</button></div>
       <div class="form-item"><label>格式说明</label>
         <div class="tip-block">学生：账号,姓名,专业,手机号,密码(可空)　|　导师：工号,姓名,职称,招生类别,可招生专业,研究方向,简介,名额,密码(可空)<br>
         已存在的账号/工号会自动更新资料，密码列留空则保持原密码。</div></div>
+      <div class="form-item"><label>当前可选值（来自基础选项设置）</label>
+        <div class="tip-block">${importOptionHint()}</div></div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-default" type="button" onclick="UI.closeModal()">取消</button>
@@ -1609,6 +1792,7 @@ window.batchEdit = batchEdit; window.doBatchEdit = doBatchEdit; window.batchDele
 window.resetPwd = resetPwd; window.doResetPwd = doResetPwd;
 window.delMentor = delMentor; window.delStudent = delStudent;
 window.showImport = showImport; window.doImport = doImport;
+window.fillImportTemplate = fillImportTemplate;
 window.loadMatches = loadMatches; window.setMatchView = setMatchView; window.setMatch = setMatch;
 window.applyMatchFilters = applyMatchFilters; window.resetMatchFilters = resetMatchFilters;
 window.changeMatchPageSize = changeMatchPageSize; window.applyMatchSummary = applyMatchSummary;
@@ -1622,6 +1806,9 @@ window.openDashboardDetail = openDashboardDetail; window.loadDashboardDetail = l
 window.changeDashboardDetailPageSize = changeDashboardDetailPageSize;
 window.mentorPage = mentorPage; window.changeMentorPageSize = changeMentorPageSize;
 window.applyMentorFilters = applyMentorFilters; window.resetMentorFilters = resetMentorFilters;
+window.loadOptionSettings = loadOptionSettings; window.saveOptionSettings = saveOptionSettings;
+window.addOptionRow = addOptionRow; window.removeOptionRow = removeOptionRow;
+window.setDegree = setDegree; window.clearDegree = clearDegree; window.markOptionDirty = markOptionDirty;
 window.changeStudentPageSize = changeStudentPageSize; window.applyStudentFilters = applyStudentFilters;
 window.resetStudentFilters = resetStudentFilters; window.setStudentQuickFilter = setStudentQuickFilter;
 

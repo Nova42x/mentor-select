@@ -15,6 +15,7 @@ from flask import (Flask, render_template, request, redirect, url_for,
                    session, jsonify, Response)
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import get_db, get_setting, set_setting, init_db, BASE_DIR
+import options_service
 from matching_service import (
     MatchingError, accept_request, reject_request, cancel_student_request,
     mentor_cancel_pairing, admin_set_pairing, pairing_count,
@@ -81,19 +82,8 @@ def parse_major_list(value):
 
 def normalize_major(value):
     """移除来源表中的专业代码后缀，如“计算机技术(085404)”。"""
-    major = str(value or '').strip()
-    return re.sub(r'\s*[（(]\d{6}[）)]\s*$', '', major).strip()
+    return options_service.normalize_major(value)
 
-
-MAJOR_DEGREE_CATEGORIES = {
-    '计算机科学与技术': '学硕',
-    '智能科学与技术': '学硕',
-    '人工智能': '学硕',  # 兼容既有演示/历史数据；正式名单使用“智能科学与技术”
-    '计算机技术': '专硕',
-    '计算机技术（联培）': '专硕',
-    '应用统计': '专硕',
-    '农业工程与信息技术': '专硕',
-}
 
 # 临时导师账号：未取得正式工号时使用，通过环境变量 MENTOR_TEMP_ACCOUNTS 配置（逗号分隔）。
 TEMP_MENTOR_ACCOUNTS = {x.strip() for x in os.environ.get('MENTOR_TEMP_ACCOUNTS', '').split(',') if x.strip()}
@@ -104,8 +94,8 @@ def valid_mentor_username(username):
 
 
 def student_degree_category(major):
-    """按本批次录取专业推导学位类别；源学生表未单列学硕/专硕。"""
-    return MAJOR_DEGREE_CATEGORIES.get(normalize_major(major), '')
+    """按管理员配置的专业-学位类别映射推导；源学生表未单列学硕/专硕。"""
+    return options_service.degree_category_for(major)
 
 
 def mentor_allows_degree_category(admission_category, degree_category):
@@ -264,6 +254,7 @@ _AUDIT_ACTIONS = {
     '/api/admin/match': '手动调整匹配',
     '/api/admin/mentor_info': '上传导师信息表',
     '/api/admin/mentor_info/delete': '删除导师信息表',
+    '/api/admin/options': '保存基础选项设置',
 }
 
 _PHASE_ACTIONS = {
@@ -811,6 +802,43 @@ def api_mentor_pairing_cancel():
 
 # ---------- 管理员 API ----------
 
+@app.get('/api/admin/options')
+@login_required('admin')
+def api_admin_options_get():
+    """返回管理员可维护的学院/专业/招生类别/职称选项及学位类别映射。"""
+    conn = get_db()
+    try:
+        saved = options_service.load(conn)
+        observed = options_service.merge_observed(conn, saved)
+    finally:
+        conn.close()
+    return jsonify({
+        'options': observed,
+        'saved': saved,
+        'degree_options': list(options_service.DEGREE_OPTIONS),
+        'defaults': options_service.defaults(),
+    })
+
+
+@app.post('/api/admin/options')
+@login_required('admin')
+def api_admin_options_save():
+    """保存基础选项设置，导师端、学生端与批量导入会立即使用新选项。"""
+    data = request.get_json(silent=True) or {}
+    conn = get_db()
+    try:
+        saved = options_service.save(conn, data)
+        conn.commit()
+        observed = options_service.merge_observed(conn, saved)
+    except Exception:
+        conn.rollback()
+        app.logger.exception('保存基础选项设置失败')
+        return jsonify({'error': '保存失败，请稍后重试'}), 500
+    finally:
+        conn.close()
+    return jsonify({'ok': True, 'options': observed})
+
+
 @app.get('/api/admin/overview')
 @login_required('admin')
 def api_admin_overview():
@@ -1167,14 +1195,23 @@ def api_admin_mentors():
     total = conn.execute('SELECT COUNT(*) c' + source_sql + where_sql, params).fetchone()['c']
     total_pages = max(1, (total + page_size - 1) // page_size)
     page = min(page, total_pages)
+    # 学院排序跟随管理员在“互选控制”里维护的顺序，未列出的学院排在最后。
+    ordered_colleges = options_service.load(conn).get('colleges') or []
+    order_cases = ' '.join(
+        'WHEN ? THEN %d' % index for index, _ in enumerate(ordered_colleges)
+    )
+    order_params = list(ordered_colleges)
+    college_order_sql = (
+        f"CASE m.college {order_cases} ELSE {len(ordered_colleges)} END"
+        if order_cases else '0'
+    )
     rows = conn.execute(
         """SELECT m.id, m.user_id, u.username, u.name, u.active, m.college, m.title, m.area, m.intro,
                   m.admission_category, m.quota, m.active m_active
            FROM mentors m JOIN users u ON u.id=m.user_id""" + where_sql +
-        " ORDER BY CASE m.college WHEN '人工智能学院' THEN 0 "
-        "WHEN '电子与电气工程学院' THEN 1 ELSE 2 END, m.college, u.username "
+        f" ORDER BY {college_order_sql}, m.college, u.username "
         'LIMIT ? OFFSET ?',
-        params + [page_size, (page - 1) * page_size],
+        params + order_params + [page_size, (page - 1) * page_size],
     ).fetchall()
     out = []
     for r in rows:
@@ -1184,21 +1221,14 @@ def api_admin_mentors():
             'SELECT COUNT(*) c FROM pairings WHERE mentor_id=?',
             (r['id'],)).fetchone()['c']
         out.append(d)
-    categories = [row['admission_category'] for row in conn.execute(
-        """SELECT DISTINCT admission_category FROM mentors
-           WHERE TRIM(admission_category)!='' ORDER BY admission_category"""
-    ).fetchall()]
-    colleges = [row['college'] for row in conn.execute(
-        """SELECT DISTINCT college FROM mentors WHERE TRIM(college)!=''
-           ORDER BY CASE college WHEN '人工智能学院' THEN 0
-                    WHEN '电子与电气工程学院' THEN 1 ELSE 2 END, college"""
-    ).fetchall()]
-    majors = [row['major'] for row in conn.execute(
-        "SELECT DISTINCT major FROM mentor_majors WHERE TRIM(major)!='' ORDER BY major"
-    ).fetchall()]
+    options = options_service.merge_observed(conn, options_service.load(conn))
     conn.close()
     return jsonify({
-        'mentors': out, 'categories': categories, 'colleges': colleges, 'majors': majors,
+        'mentors': out,
+        'categories': options['categories'],
+        'colleges': options['colleges'],
+        'majors': options['majors'],
+        'titles': options['titles'],
         'pagination': {'page': page, 'page_size': page_size,
                        'total': total, 'total_pages': total_pages},
     })
@@ -1398,9 +1428,12 @@ def api_admin_students():
            FROM students s JOIN users u ON u.id=s.user_id""" + where_sql +
         ' ORDER BY u.username LIMIT ? OFFSET ?', params + [page_size, (page - 1) * page_size]
     ).fetchall()
-    majors = [r['major'] for r in conn.execute(
-        "SELECT DISTINCT major FROM students WHERE TRIM(major)!='' ORDER BY major"
-    ).fetchall()]
+    # 专业筛选同时提供配置项与数据中已有的取值，便于筛选历史专业。
+    majors = sorted(
+        set(options_service.load(conn).get('majors') or []) |
+        {r['major'] for r in conn.execute(
+            "SELECT DISTINCT major FROM students WHERE TRIM(major)!=''")}
+    )
 
     # 每学生当前配对与待审核申请（实时可见）
     out = []
@@ -2039,8 +2072,12 @@ def api_admin_matches():
     page_rows = result_rows[start:start + page_size]
     for row in page_rows:
         row.pop('_search', None)
-    colleges = sorted({m['college'] for m in mentor_source if m['college']})
-    majors = sorted({s['major'] for s in active_students if s['major']})
+    # 筛选下拉同时提供配置项与数据中已在用的取值，保证旧数据也能被筛选到。
+    option_source = options_service.merge_observed(conn, options_service.load(conn))
+    colleges = option_source['colleges']
+    majors = sorted(
+        set(option_source['majors']) | {s['major'] for s in active_students if s['major']}
+    )
     conn.close()
     return jsonify({
         'info': info, 'view': view, 'summary': summary,

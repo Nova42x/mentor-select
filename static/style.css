@@ -449,6 +449,78 @@ select { padding-right: 30px; appearance: none; -webkit-appearance: none;
 .setting-row .setting-name { font-size: 14px; font-weight: 500; }
 .setting-row .setting-desc { font-size: 12px; color: var(--text-3); margin-top: 2px; }
 
+/* ---------- 基础选项设置 ---------- */
+.option-settings { padding: 4px 0 2px; }
+.option-loading { padding: 18px 0; color: var(--text-3); font-size: 13px; }
+.option-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.option-block {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 14px 16px 16px; background: #fff;
+}
+.option-block-wide { margin-top: 16px; }
+.option-block-head { margin-bottom: 10px; }
+.option-block-head h4 { margin: 0; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.option-block-head span { display: block; margin-top: 3px; font-size: 12px; color: var(--text-3); line-height: 1.6; }
+.option-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.option-list-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.option-row { display: flex; align-items: center; gap: 6px; }
+.option-row input { flex: 1; min-width: 0; }
+.option-remove {
+  flex: 0 0 auto; width: 30px; height: 30px; padding: 0; color: var(--text-3);
+  border-radius: 6px; font-size: 12px; line-height: 1;
+}
+.option-remove:hover { color: var(--error); background: var(--error-bg); }
+.option-degree-table { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.option-degree-head { font-size: 12.5px; font-weight: 600; color: var(--text-2); margin-bottom: 9px; }
+.option-degree-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 6px 0; border-bottom: 1px solid var(--border);
+}
+.option-degree-row:last-child { border-bottom: 0; }
+.option-degree-name { flex: 1 1 160px; min-width: 0; font-size: 13px; color: var(--text); }
+.option-degree-segmented { flex: 0 0 auto; }
+.option-empty { font-size: 12.5px; color: var(--text-3); padding: 6px 0; }
+.option-note {
+  margin-top: 14px; padding: 11px 14px; border-radius: var(--radius-sm);
+  background: var(--neutral-bg); color: var(--text-2); font-size: 12.5px; line-height: 1.7;
+}
+
+/* 导师可招生专业多选 */
+.major-picker {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  background: #fff; max-height: 190px; overflow-y: auto;
+}
+.major-pick {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px;
+  border: 1px solid var(--border-strong); border-radius: 999px;
+  font-size: 12.5px; color: var(--text-2); cursor: pointer;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+}
+.major-pick:hover { border-color: var(--primary); color: var(--primary); }
+.major-pick input { display: none; }
+.major-pick:has(input:checked) {
+  color: var(--primary-active); background: var(--primary-bg); border-color: var(--primary);
+  font-weight: 500;
+}
+.major-pick-degree {
+  font-style: normal; font-size: 11px; padding: 1px 6px; border-radius: 999px;
+  background: var(--neutral-bg); color: var(--text-3);
+}
+.major-pick:has(input:checked) .major-pick-degree { background: #fff; color: var(--primary-active); }
+
+@media (max-width: 1100px) {
+  .option-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .option-grid { grid-template-columns: 1fr; }
+  .option-list-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .option-list-grid { grid-template-columns: 1fr; }
+  .option-degree-row { align-items: flex-start; }
+}
+
 /* ---------- 批量操作栏 ---------- */
 .batch-bar {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;

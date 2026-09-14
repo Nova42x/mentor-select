@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 """实时互选的原子事务服务。所有改变配对结果的操作都集中在这里。"""
-import re
+import options_service
 
 
 XUESHU_LIMIT = 3
-XUESHU_MAJORS = frozenset({'计算机科学与技术', '智能科学与技术', '人工智能'})
+# 内置兜底默认值；管理员可在“互选控制 → 基础选项设置”里调整专业归属，
+# 运行时以配置为准，这里仅用于展示默认集合与兼容旧引用。
+XUESHU_MAJORS = frozenset(
+    name for name, degree in options_service.DEFAULT_DEGREE_MAP.items() if degree == '学硕'
+)
 
 
 class MatchingError(Exception):
@@ -18,11 +22,11 @@ def pairing_count(conn, mentor_id):
 
 
 def is_xueshu_major(major):
-    """识别本批次学硕专业，兼容导入数据中的六位专业代码后缀。"""
-    normalized = re.sub(
-        r'\s*[（(]\d{6}[）)]\s*$', '', str(major or '').strip()
-    ).strip()
-    return normalized in XUESHU_MAJORS
+    """识别学硕专业：优先按管理员配置的专业归属，未配置时用内置默认。"""
+    normalized = options_service.normalize_major(major)
+    if not normalized:
+        return False
+    return options_service.degree_category_for(normalized) == '学硕'
 
 
 def xueshu_limit_enabled(conn):
