@@ -1,4 +1,4 @@
-# Python
+# Python runtime
 __pycache__/
 *.py[cod]
 .venv/
@@ -10,18 +10,30 @@ data/
 *.db-wal
 *.sqlite*
 
-# Generated documents and local artifacts
-*.docx
-*.xlsx
-*.xls
-output/
-outputs/
-resume_render/
-resume_onepage_render/
-docgen/node_modules/
-
 # Browser/test artifacts
 .playwright-cli/
+output/
+outputs/
+
+# Generated dependency trees
+docgen/node_modules/
+node_modules/
+ant-design-pro-master/
+
+# Agent / editor scratch space
+.codex_tmp/
+tmp/
+tmp_*
+
+# Personal documents and roster exports
+*.docx
+*.xls
+*.xlsx
+*.pdf
+简历_*.docx
+*学籍信息*.xls*
+*员工信息*.xls*
+*互动学习文档*.html
 
 # Local editor and OS files
 .idea/
